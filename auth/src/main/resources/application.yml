@@ -3,6 +3,18 @@ spring:
   config:
     activate:
       on-profile: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/my_db?currentSchema=my_schema
+    username: postgres
+    password: 1234
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - classpath:sql/oauth2-registered-client.sql
+        - classpath:sql/oauth2-authorization.sql
+        - classpath:sql/oauth2-authorization-consent.sql
+        - classpath:sql/users.sql
   cloud:
     nacos:
       discovery:
@@ -23,6 +35,18 @@ spring:
   config:
     activate:
       on-profile: dev
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?currentSchema=${POSTGRES_SCHEMA}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - classpath:sql/oauth2-registered-client.sql
+        - classpath:sql/oauth2-authorization.sql
+        - classpath:sql/oauth2-authorization-consent.sql
+        - classpath:sql/users.sql
   cloud:
     nacos:
       discovery:

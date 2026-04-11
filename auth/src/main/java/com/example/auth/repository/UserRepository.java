@@ -1,11 +1,12 @@
 package com.example.auth.repository;
 
+import java.util.Optional;
+
 import com.example.auth.domain.User;
-import org.springframework.data.r2dbc.repository.R2dbcRepository;
-import reactor.core.publisher.Mono;
+import org.springframework.data.repository.CrudRepository;
 
-public interface UserRepository extends R2dbcRepository<User, Long> {
+public interface UserRepository extends CrudRepository<User, Long> {
 
-    Mono<User> findOneByUsername(String username);
+    Optional<User> findByUsername(String username);
 
 }
