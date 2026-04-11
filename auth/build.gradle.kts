@@ -6,6 +6,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-authorization-server")
     implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
     implementation("com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery")
+    compileOnly("org.springframework.boot:spring-boot-starter-data-r2dbc")
+    compileOnly("org.springframework.boot:spring-boot-starter-data-redis-reactive")
+    compileOnly("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     runtimeOnly("org.postgresql:postgresql")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
