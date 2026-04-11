@@ -1,5 +1,7 @@
 package com.example.auth.config;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -24,19 +26,19 @@ public class AuthorizationServerConfig {
             PasswordEncoder passwordEncoder,
             @Value("${app.client.redirect-uri}") String redirectUri
     ) {
-        RegisteredClient client = RegisteredClient.withId(UUID.randomUUID().toString())
+        RegisteredClient.Builder client = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId("client_id_1")
                 .clientSecret(passwordEncoder.encode("client_secret_1"))
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUri(redirectUri)
                 .scope(OidcScopes.OPENID)
                 .scope("profile")
-                .scope("email")
-                .build();
+                .scope("email");
 
-        return new InMemoryRegisteredClientRepository(client);
+        supportedRedirectUris(redirectUri).forEach(client::redirectUri);
+
+        return new InMemoryRegisteredClientRepository(client.build());
     }
 
     @Bean
@@ -53,6 +55,21 @@ public class AuthorizationServerConfig {
     public AuthorizationServerSettings authorizationServerSettings(@Value("${app.auth.issuer}") String issuer) {
         return AuthorizationServerSettings.builder()
                 .issuer(issuer)
+                .authorizationEndpoint("/oauth2/authorization")
+                .jwkSetEndpoint("/.well-known/jwks.json")
                 .build();
+    }
+
+    private Set<String> supportedRedirectUris(String configuredRedirectUri) {
+        Set<String> redirectUris = new LinkedHashSet<>();
+        redirectUris.add(configuredRedirectUri);
+
+        if ("http://127.0.0.1:8011/login/oauth2/code/my-registration".equals(configuredRedirectUri)) {
+            redirectUris.add("http://127.0.0.1:8011/oauth2/code/my-registration");
+        } else if ("http://127.0.0.1:8011/oauth2/code/my-registration".equals(configuredRedirectUri)) {
+            redirectUris.add("http://127.0.0.1:8011/login/oauth2/code/my-registration");
+        }
+
+        return redirectUris;
     }
 }

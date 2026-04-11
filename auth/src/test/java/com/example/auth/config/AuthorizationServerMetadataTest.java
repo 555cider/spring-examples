@@ -36,6 +36,18 @@ class AuthorizationServerMetadataTest {
     void openIdMetadataIsPublished() throws Exception {
         mockMvc.perform(get("/.well-known/openid-configuration"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.issuer").value("http://127.0.0.1:9000"));
+                .andExpect(jsonPath("$.issuer").value("http://localhost:8080/auth"))
+                .andExpect(jsonPath("$.authorization_endpoint").value("http://localhost:8080/auth/oauth2/authorization"))
+                .andExpect(jsonPath("$.jwks_uri").value("http://localhost:8080/auth/.well-known/jwks.json"));
+    }
+
+    @Test
+    void jwkSetEndpointIsPublicAndOmitsPrivateKeyMaterial() throws Exception {
+        mockMvc.perform(get("/.well-known/jwks.json"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.keys[0].kid").value("auth-server-key"))
+                .andExpect(jsonPath("$.keys[0].n").exists())
+                .andExpect(jsonPath("$.keys[0].e").exists())
+                .andExpect(jsonPath("$.keys[0].d").doesNotExist());
     }
 }

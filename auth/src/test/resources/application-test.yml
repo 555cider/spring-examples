@@ -1,5 +1,5 @@
 app:
   auth:
-    issuer: http://127.0.0.1:9000
+    issuer: http://localhost:8080/auth
   client:
     redirect-uri: http://127.0.0.1:8011/login/oauth2/code/my-registration

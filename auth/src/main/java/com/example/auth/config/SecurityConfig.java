@@ -26,7 +26,9 @@ public class SecurityConfig {
         http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
                 .with(authorizationServerConfigurer, authorizationServer ->
                         authorizationServer.oidc(Customizer.withDefaults()))
-                .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/.well-known/openid-configuration", "/.well-known/jwks.json").permitAll()
+                        .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
                         new LoginUrlAuthenticationEntryPoint("/login"),
                         new MediaTypeRequestMatcher(TEXT_HTML)))
