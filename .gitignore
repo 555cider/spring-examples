@@ -30,6 +30,7 @@ logs
 
 # Package
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear
@@ -39,9 +40,6 @@ logs
 
 # Gradle
 .gradle
-gradlew
-gradlew.bat
-**/gradle/
 **/build/
 build
 

@@ -1,10 +1,8 @@
 pluginManagement {
     repositories {
+        gradlePluginPortal()
+        mavenCentral()
     }
-}
-
-plugins {
-//    id("org.gradle.toolchains")
 }
 
 rootProject.name = "spring-projects"
