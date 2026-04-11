@@ -12,6 +12,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
+import com.example.auth.repository.UserRepository;
+import com.example.auth.service.JdbcUserDetailsService;
+
 import static org.springframework.http.MediaType.TEXT_HTML;
 
 @Configuration
@@ -51,6 +54,11 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public JdbcUserDetailsService userDetailsService(UserRepository userRepository) {
+        return new JdbcUserDetailsService(userRepository);
     }
 
 }

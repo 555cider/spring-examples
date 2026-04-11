@@ -4,7 +4,6 @@ import com.example.auth.service.JdbcUserDetailsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
@@ -27,14 +26,12 @@ class JdbcAuthorizationServerPersistenceTest {
     @Autowired
     private ApplicationContext context;
 
-    @Autowired
-    private UserDetailsService userDetailsService;
-
     @Test
     void authorizationServerPersistenceBeansAreJdbcBacked() {
         RegisteredClientRepository registeredClientRepository = context.getBean(RegisteredClientRepository.class);
         OAuth2AuthorizationService authorizationService = context.getBean(OAuth2AuthorizationService.class);
         OAuth2AuthorizationConsentService consentService = context.getBean(OAuth2AuthorizationConsentService.class);
+        JdbcUserDetailsService userDetailsService = context.getBean("userDetailsService", JdbcUserDetailsService.class);
 
         assertThat(registeredClientRepository).isInstanceOf(JdbcRegisteredClientRepository.class);
         assertThat(registeredClientRepository.findByClientId("client_id_1")).isNotNull();
