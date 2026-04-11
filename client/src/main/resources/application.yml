@@ -18,6 +18,10 @@ spring:
         provider:
           my-provider:
             issuer-uri: http://localhost:8080/auth
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
 
 server:
   port: 8011
@@ -43,6 +47,10 @@ spring:
         provider:
           my-provider:
             issuer-uri: ${AUTH_ISSUER_URI}
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR}
 
 server:
   port: ${CLIENT_PORT}
