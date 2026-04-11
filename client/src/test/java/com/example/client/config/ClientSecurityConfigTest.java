@@ -10,6 +10,9 @@ import com.sun.net.httpserver.HttpServer;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +25,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, properties = "spring.main.web-application-type=servlet")
 @ActiveProfiles("local")
@@ -78,6 +80,20 @@ class ClientSecurityConfigTest {
         mockMvc.perform(get("/profile"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(header().string("Location", "/oauth2/authorization/my-registration"));
+    }
+
+    @Test
+    void publicIndexRequestReturnsOkAndRendersIndexView() throws Exception {
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("index"));
+    }
+
+    @Test
+    void authenticatedProfileRequestReturnsOkAndRendersProfileView() throws Exception {
+        mockMvc.perform(get("/profile").with(oidcLogin()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile"));
     }
 
     private static void handleDiscoveryRequest(HttpExchange exchange) throws IOException {
