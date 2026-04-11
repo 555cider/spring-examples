@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -94,6 +95,14 @@ class ClientSecurityConfigTest {
         mockMvc.perform(get("/profile").with(oidcLogin()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("profile"));
+    }
+
+    @Test
+    void applicationRegistersDiscoveryClient() throws Exception {
+        Class<?> discoveryClientType = Class.forName("org.springframework.cloud.client.discovery.DiscoveryClient");
+
+        assertThat(context.getBeanNamesForType(discoveryClientType))
+                .isNotEmpty();
     }
 
     private static void handleDiscoveryRequest(HttpExchange exchange) throws IOException {
