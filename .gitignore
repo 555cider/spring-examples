@@ -44,3 +44,6 @@ gradlew.bat
 **/gradle/
 **/build/
 build
+
+# Local worktrees
+.worktrees/
