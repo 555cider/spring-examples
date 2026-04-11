@@ -12,7 +12,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:9000
+          issuer-uri: http://localhost:8080/auth
+          jws-algorithms: RS512
   cloud:
     nacos:
       discovery:
@@ -37,6 +38,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${AUTH_ISSUER_URI}
+          jws-algorithms: RS512
   cloud:
     nacos:
       discovery:
