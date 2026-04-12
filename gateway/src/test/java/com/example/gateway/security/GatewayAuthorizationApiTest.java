@@ -111,6 +111,14 @@ class GatewayAuthorizationApiTest {
     }
 
     @Test
+    void adminReportsRequiresAuthentication() {
+        webTestClient.get()
+                .uri("/api/admin/reports")
+                .exchange()
+                .expectStatus().isUnauthorized();
+    }
+
+    @Test
     void adminReportsAllowsRoleAdmin() {
         when(jwtDecoder.decode(eq("admin-token"))).thenReturn(Mono.just(jwt("admin-token", "admin", List.of("ROLE_ADMIN"), null)));
 
@@ -148,6 +156,14 @@ class GatewayAuthorizationApiTest {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer user-token")
                 .exchange()
                 .expectStatus().isForbidden();
+    }
+
+    @Test
+    void documentRequiresAuthentication() {
+        webTestClient.get()
+                .uri("/api/documents/doc-user")
+                .exchange()
+                .expectStatus().isUnauthorized();
     }
 
     @Test

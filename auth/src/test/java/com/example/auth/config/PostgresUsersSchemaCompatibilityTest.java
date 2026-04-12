@@ -117,7 +117,7 @@ class PostgresUsersSchemaCompatibilityTest {
     }
 
     @Test
-    void dockerComposeInitScriptSeedsUserPasswordAs1234() {
+    void dockerComposeInitScriptSeedsUserPasswordAs1234AndSkipsAdmin() {
         new ResourceDatabasePopulator(dockerComposeInitScript()).execute(dataSource());
 
         String encodedPassword = jdbcTemplate.queryForObject(
@@ -127,6 +127,11 @@ class PostgresUsersSchemaCompatibilityTest {
         );
 
         assertThat(new BCryptPasswordEncoder().matches("1234", encodedPassword)).isTrue();
+        assertThat(jdbcTemplate.queryForObject(
+                "select count(*) from my_schema.users where username = ?",
+                Integer.class,
+                "admin"
+        )).isZero();
     }
 
     @Test

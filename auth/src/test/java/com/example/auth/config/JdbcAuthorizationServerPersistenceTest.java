@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.DefaultApplicationArguments;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -117,7 +118,7 @@ class JdbcAuthorizationServerPersistenceTest {
     }
 
     @Test
-    void seedUsersRepairsExistingAuthoritiesToExactDefaults() throws Exception {
+    void seedUsersAddsMissingAuthoritiesWithoutRemovingExistingExtras() throws Exception {
         ApplicationRunner seedUserRunner = context.getBean("seedUsers", ApplicationRunner.class);
 
         deleteUser("user");
@@ -134,9 +135,9 @@ class JdbcAuthorizationServerPersistenceTest {
                 on conflict do nothing
                 """,
                 userId,
-                "ROLE_USER",
+                "ROLE_ADMIN",
                 userId,
-                "ROLE_ADMIN"
+                "ROLE_USER"
         );
         jdbcTemplate.update("""
                 insert into my_schema.user_authorities (user_id, authority)
@@ -144,9 +145,9 @@ class JdbcAuthorizationServerPersistenceTest {
                 on conflict do nothing
                 """,
                 adminId,
-                "ROLE_ADMIN",
+                "ROLE_USER",
                 adminId,
-                "ROLE_USER"
+                "ROLE_ADMIN"
         );
 
         seedUserRunner.run(new DefaultApplicationArguments(new String[0]));
@@ -158,7 +159,7 @@ class JdbcAuthorizationServerPersistenceTest {
                 where u.username = ?
                 order by authority
                 """, String.class, "user"))
-                .containsExactly("ROLE_USER");
+                .containsExactly("ROLE_ADMIN", "ROLE_USER");
 
         assertThat(jdbcTemplate.queryForList("""
                 select authority
@@ -167,19 +168,35 @@ class JdbcAuthorizationServerPersistenceTest {
                 where u.username = ?
                 order by authority
                 """, String.class, "admin"))
-                .containsExactly("ROLE_ADMIN");
+                .containsExactly("ROLE_ADMIN", "ROLE_USER");
 
         assertThat(context.getBean("userDetailsService", JdbcUserDetailsService.class)
                 .loadUserByUsername("user")
                 .getAuthorities())
                 .extracting(GrantedAuthority::getAuthority)
-                .containsExactly("ROLE_USER");
+                .containsExactly("ROLE_ADMIN", "ROLE_USER");
 
         assertThat(context.getBean("userDetailsService", JdbcUserDetailsService.class)
                 .loadUserByUsername("admin")
                 .getAuthorities())
                 .extracting(GrantedAuthority::getAuthority)
-                .containsExactly("ROLE_ADMIN");
+                .containsExactly("ROLE_ADMIN", "ROLE_USER");
+    }
+
+    @Test
+    void seedUsersBeanRequiresExplicitDemoUsersProperty() throws Exception {
+        ConditionalOnProperty conditionalOnProperty = AuthorizationServerConfig.class
+                .getDeclaredMethod(
+                        "seedUsers",
+                        com.example.auth.repository.UserRepository.class,
+                        com.example.auth.repository.UserAuthorityRepository.class,
+                        org.springframework.security.crypto.password.PasswordEncoder.class
+                )
+                .getAnnotation(ConditionalOnProperty.class);
+
+        assertThat(conditionalOnProperty).isNotNull();
+        assertThat(conditionalOnProperty.name()).containsExactly("app.auth.demo-users.enabled");
+        assertThat(conditionalOnProperty.havingValue()).isEqualTo("true");
     }
 
     @Test

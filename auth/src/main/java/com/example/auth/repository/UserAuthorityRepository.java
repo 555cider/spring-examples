@@ -36,9 +36,7 @@ public class UserAuthorityRepository {
                 """, String.class, userId);
     }
 
-    public void replaceAuthorities(Long userId, Collection<String> authorities) {
-        jdbcTemplate.update("delete from my_schema.user_authorities where user_id = ?", userId);
-
+    public void addAuthorities(Long userId, Collection<String> authorities) {
         Collection<String> sourceAuthorities = authorities == null ? List.of() : authorities;
         List<String> distinctAuthorities = new ArrayList<>(new LinkedHashSet<>(sourceAuthorities));
         if (distinctAuthorities.isEmpty()) {
@@ -46,7 +44,7 @@ public class UserAuthorityRepository {
         }
 
         jdbcTemplate.batchUpdate(
-                "insert into my_schema.user_authorities (user_id, authority) values (?, ?)",
+                "insert into my_schema.user_authorities (user_id, authority) values (?, ?) on conflict do nothing",
                 distinctAuthorities,
                 distinctAuthorities.size(),
                 (ps, authority) -> {

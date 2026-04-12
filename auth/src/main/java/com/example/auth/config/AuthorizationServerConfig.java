@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -105,6 +106,7 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "app.auth.demo-users.enabled", havingValue = "true")
     public ApplicationRunner seedUsers(
             UserRepository userRepository,
             UserAuthorityRepository userAuthorityRepository,
@@ -176,10 +178,7 @@ public class AuthorizationServerConfig {
             List<String> authorities
     ) {
         userRepository.findByUsername(username).ifPresentOrElse(existingUser -> {
-                    if (!new LinkedHashSet<>(userAuthorityRepository.findAuthoritiesByUserId(existingUser.getId()))
-                            .equals(new LinkedHashSet<>(authorities))) {
-                        userAuthorityRepository.replaceAuthorities(existingUser.getId(), authorities);
-                    }
+                    userAuthorityRepository.addAuthorities(existingUser.getId(), authorities);
                 },
                 () -> {
                     User savedUser = userRepository.save(new User(
@@ -191,7 +190,7 @@ public class AuthorizationServerConfig {
                             null
                     ));
 
-                    userAuthorityRepository.replaceAuthorities(savedUser.getId(), authorities);
+                    userAuthorityRepository.addAuthorities(savedUser.getId(), authorities);
                 });
     }
 }

@@ -31,16 +31,16 @@
   - remove the legacy `users.authorities` column after migration
   - normalize `created_at` and `updated_at` to `timestamp with time zone`
   - install a trigger so `updated_at` refreshes on every update
-- `postgres/init/init.sql` is only used by PostgreSQL container bootstrap on a fresh data directory. It creates the same effective schema and seed rows for local Docker runs.
+- `postgres/init/init.sql` is only used by PostgreSQL container bootstrap on a fresh data directory. It creates the same effective schema and only seeds the non-privileged `user` demo account for local Docker runs.
 
 ## Seed data
 
-- Default local user:
+- Default local/test user:
   - username: `user`
   - email: `user@example.com`
   - password: `1234`
   - authority: `ROLE_USER`
-- Default local admin:
+- Default local/test admin:
   - username: `admin`
   - email: `admin@example.com`
   - password: `1234`
@@ -50,7 +50,9 @@
   - client secret: `client_secret_1`
   - grant types: authorization code, refresh token
 
-The application also seeds the same logical defaults at startup if they are absent, so an existing development database can self-heal missing rows.
+The application also seeds the same logical defaults at startup if they are absent, but only when the `local` or `test` profile is active. Existing databases in those profiles can self-heal missing rows without removing extra authorities.
+
+The startup seeder does not run in `dev` or production profiles.
 
 ## Operational notes
 

@@ -16,5 +16,7 @@ spring:
 app:
   auth:
     issuer: http://localhost:8080/auth
+    demo-users:
+      enabled: true
   client:
     redirect-uri: http://127.0.0.1:8011/login/oauth2/code/my-registration
