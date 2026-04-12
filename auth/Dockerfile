@@ -1,11 +1,9 @@
-# STAGE 1. Build the project
-FROM gradle:8-jdk21 AS builder
-WORKDIR /app
-COPY --chown=gradle:gradle . .
-RUN ["gradle", "clean", "build"]
+FROM gradle:8.14.3-jdk21 AS builder
+WORKDIR /workspace
+COPY . .
+RUN ./gradlew :auth:bootJar --no-daemon
 
-# STAGE 2. Copy the project
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar app.jar
+COPY --from=builder /workspace/auth/build/libs/*.jar app.jar
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

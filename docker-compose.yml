@@ -1,10 +1,18 @@
 version: "3.8"
 
 services:
-  # PostgreSQL Database
+  nacos:
+    image: nacos/nacos-server:v3.1.1
+    container_name: nacos
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+    ports:
+      - "8848:8848"
+
   postgres:
     container_name: postgres
-    image: postgres:latest
+    image: postgres:16
     restart: always
     env_file:
       - .env
@@ -15,70 +23,61 @@ services:
       - ./postgres/config/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./postgres/init:/docker-entrypoint-initdb.d
     command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
-  # Redis Cache
+
   redis:
     container_name: redis
-    image: redis:latest
+    image: redis:7
     restart: always
     env_file:
       - .env
     ports:
       - "${REDIS_PORT}:${REDIS_PORT_DOCKER}"
-  # Service Discovery
-  discovery:
-    container_name: discovery
-    build: discovery
-    env_file:
-      - .env
-    environment:
-      - "SPRING_PROFILES_ACTIVE=dev"
-#    hostname: "${DISCOVERY_HOST}"
-    ports:
-      - "${DISCOVERY_PORT}:${DISCOVERY_PORT_DOCKER}"
-  # API Gateway
-  gateway:
-    container_name: gateway
-    build: gateway
-    env_file:
-      - .env
-    environment:
-      - "SPRING_PROFILES_ACTIVE=dev"
-#    hostname: "${GATEWAY_HOST}"
-    ports:
-      - "${GATEWAY_PORT}:${GATEWAY_PORT_DOCKER}"
-    depends_on:
-      - discovery
-  # Auth Service
+
   auth:
     container_name: auth
-    build: auth
+    build:
+      context: .
+      dockerfile: auth/Dockerfile
     env_file:
       - .env
     environment:
-      - "SPRING_PROFILES_ACTIVE=dev"
-#    hostname: "${AUTH_HOST}"
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_SERVER_ADDR=nacos:8848
     ports:
       - "${AUTH_PORT}:${AUTH_PORT_DOCKER}"
     depends_on:
+      - nacos
       - postgres
-      - redis
-      - discovery
-      - gateway
-  # Client Service
-  client:
-    container_name: client
-    build: client
+
+  gateway:
+    container_name: gateway
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
     env_file:
       - .env
     environment:
-      - "SPRING_PROFILES_ACTIVE=dev"
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_SERVER_ADDR=nacos:8848
+    ports:
+      - "${GATEWAY_PORT}:${GATEWAY_PORT_DOCKER}"
+    depends_on:
+      - nacos
+      - auth
+      - redis
+
+  client:
+    container_name: client
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - NACOS_SERVER_ADDR=nacos:8848
     ports:
       - "${CLIENT_PORT}:${CLIENT_PORT_DOCKER}"
-    network_mode: "host"
     depends_on:
-      - postgres
-      - redis
+      - nacos
       - auth
-
-volumes:
-  postgres-data:
