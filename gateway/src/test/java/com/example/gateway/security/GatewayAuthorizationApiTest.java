@@ -108,6 +108,58 @@ class GatewayAuthorizationApiTest {
                 .jsonPath("$.requestedBy").isEqualTo("admin");
     }
 
+    @Test
+    void documentOwnerCanReadOwnedDocument() {
+        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "user", List.of("ROLE_USER"), null)));
+
+        webTestClient.get()
+                .uri("/api/documents/doc-user")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer user-token")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("doc-user")
+                .jsonPath("$.title").isEqualTo("User Document")
+                .jsonPath("$.ownerUsername").isEqualTo("user");
+    }
+
+    @Test
+    void roleUserCannotReadAnotherUsersDocument() {
+        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "user", List.of("ROLE_USER"), null)));
+
+        webTestClient.get()
+                .uri("/api/documents/doc-admin")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer user-token")
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
+    void adminCanReadAnotherUsersDocument() {
+        when(jwtDecoder.decode(eq("admin-token"))).thenReturn(Mono.just(jwt("admin-token", "admin", List.of("ROLE_ADMIN"), null)));
+
+        webTestClient.get()
+                .uri("/api/documents/doc-user")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer admin-token")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("doc-user")
+                .jsonPath("$.title").isEqualTo("User Document")
+                .jsonPath("$.ownerUsername").isEqualTo("user");
+    }
+
+    @Test
+    void missingDocumentReturnsNotFound() {
+        when(jwtDecoder.decode(eq("admin-token"))).thenReturn(Mono.just(jwt("admin-token", "admin", List.of("ROLE_ADMIN"), null)));
+
+        webTestClient.get()
+                .uri("/api/documents/missing")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer admin-token")
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
     private void assertAuthorities(Map<String, Object> response, String... expectedAuthorities) {
         assertThat(response).containsKey("authorities");
         assertThat(response.get("authorities")).isInstanceOf(List.class);
