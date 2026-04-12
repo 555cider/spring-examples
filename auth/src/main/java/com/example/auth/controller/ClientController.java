@@ -1,4 +1,4 @@
-package com.example.auth;
+package com.example.auth.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,5 +15,4 @@ public class ClientController {
     public String index2() {
         return "index";
     }
-
 }
