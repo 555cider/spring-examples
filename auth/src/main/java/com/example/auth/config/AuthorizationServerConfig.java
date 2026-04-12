@@ -148,6 +148,7 @@ public class AuthorizationServerConfig {
                     "roles",
                     principal.getAuthorities().stream()
                             .map(authority -> authority.getAuthority())
+                            .filter(authority -> authority.startsWith("ROLE_"))
                             .distinct()
                             .sorted()
                             .collect(Collectors.toList())

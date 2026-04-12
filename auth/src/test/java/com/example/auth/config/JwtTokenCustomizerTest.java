@@ -2,6 +2,7 @@ package com.example.auth.config;
 
 import com.example.auth.service.JdbcUserDetailsService;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -64,5 +65,36 @@ class JwtTokenCustomizerTest {
 
         assertThat(context.getClaims().build().getClaimAsStringList("roles"))
                 .isEqualTo(List.of("ROLE_ADMIN"));
+    }
+
+    @Test
+    void addsOnlyDistinctSortedRoleAuthoritiesToRolesClaim() {
+        RegisteredClient registeredClient = registeredClientRepository.findByClientId("client_id_1");
+        Authentication principal = UsernamePasswordAuthenticationToken.authenticated(
+                "mixed-authorities-user",
+                "N/A",
+                List.of(
+                        new SimpleGrantedAuthority("ROLE_ADMIN"),
+                        new SimpleGrantedAuthority("PERM_REPORTS_READ"),
+                        new SimpleGrantedAuthority("ROLE_ADMIN"),
+                        new SimpleGrantedAuthority("ROLE_USER")
+                )
+        );
+
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder();
+        JwtEncodingContext context = JwtEncodingContext.with(
+                        JwsHeader.with(SignatureAlgorithm.RS512),
+                        claims
+                )
+                .registeredClient(registeredClient)
+                .principal(principal)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .tokenType(OAuth2TokenType.ACCESS_TOKEN)
+                .build();
+
+        jwtTokenCustomizer.customize(context);
+
+        assertThat(context.getClaims().build().getClaimAsStringList("roles"))
+                .isEqualTo(List.of("ROLE_ADMIN", "ROLE_USER"));
     }
 }
