@@ -44,7 +44,7 @@ class GatewayAuthorizationApiTest {
     @BeforeEach
     void setUp() {
         webTestClient = WebTestClient.bindToServer()
-                .baseUrl("http://localhost:" + port)
+                .baseUrl("http://127.0.0.1:" + port)
                 .build();
 
         Mockito.reset(jwtDecoder);
@@ -64,6 +64,22 @@ class GatewayAuthorizationApiTest {
                     assertThat(response.get("username")).isEqualTo("alice");
                     assertAuthorities(response, "ROLE_USER");
                 });
+    }
+
+    @Test
+    void meRequiresAuthentication() {
+        webTestClient.get()
+                .uri("/api/me")
+                .exchange()
+                .expectStatus().isUnauthorized();
+    }
+
+    @Test
+    void permittedPublicPathIsNotBlockedBySecurity() {
+        webTestClient.get()
+                .uri("/public/ping")
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     @Test
