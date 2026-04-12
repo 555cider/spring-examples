@@ -258,5 +258,4 @@ The design is complete when all of the following are true:
 - `gateway` maps `roles` into Spring Security authorities
 - `/api/admin/reports` enforces admin-only RBAC
 - `/api/documents/{id}` enforces owner-or-admin ABAC
-- automated tests cover the issuer-side claim behavior and the gateway-side authorization decisions
 - the behavior is covered by automated tests in `auth` and `gateway`
