@@ -20,7 +20,6 @@ public class AuthorizationApiController {
                 "username", authentication.getName(),
                 "authorities", authentication.getAuthorities().stream()
                         .map(authority -> authority.getAuthority())
-                        .filter(authority -> !authority.startsWith("FACTOR_"))
                         .sorted()
                         .toList()
         ));

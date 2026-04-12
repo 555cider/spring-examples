@@ -59,7 +59,9 @@ class GatewayAuthorizationApiTest {
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.username").isEqualTo("alice")
-                .jsonPath("$.authorities[0]").isEqualTo("ROLE_USER");
+                .jsonPath("$.authorities.length()").isEqualTo(2)
+                .jsonPath("$.authorities[0]").isEqualTo("FACTOR_BEARER")
+                .jsonPath("$.authorities[1]").isEqualTo("ROLE_USER");
     }
 
     @Test
