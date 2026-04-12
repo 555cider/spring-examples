@@ -62,9 +62,9 @@ The startup seeder does not run in `dev` or production profiles.
   - `preferred_username`
   - `email`
   - `email_verified`
-  - `updated_at`
   - `roles`
-- The UserInfo endpoint returns the same standard claims filtered by requested scopes, plus the custom `roles` claim.
+- The UserInfo endpoint returns standard claims filtered by requested scopes, plus the custom `roles` claim.
+- `updated_at` is emitted from the UserInfo endpoint for `profile` scope, not persisted into the ID token.
 
 ## Operational notes
 

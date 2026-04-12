@@ -127,7 +127,6 @@ class JwtTokenCustomizerTest {
         assertThat(builtClaims.getClaimAsString("preferred_username")).isEqualTo("admin");
         assertThat(builtClaims.getClaimAsString("email")).isEqualTo("admin@example.com");
         assertThat((Boolean) builtClaims.getClaim("email_verified")).isEqualTo(true);
-        assertThat((Object) builtClaims.getClaim("updated_at")).isNotNull();
         assertThat(builtClaims.getClaimAsStringList("roles")).isEqualTo(List.of("ROLE_ADMIN"));
     }
 }

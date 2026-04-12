@@ -29,12 +29,7 @@ class OidcClaimServiceTest {
 
     @Test
     void userInfoClaimsIncludeRequestedStandardClaimsAndRoles() {
-        Authentication principal = principal("admin");
-
-        Map<String, Object> userInfoClaims = oidcClaimService.userInfoClaims(
-                oidcClaimService.idTokenClaims(principal),
-                Set.of("openid", "profile", "email")
-        );
+        Map<String, Object> userInfoClaims = oidcClaimService.userInfoClaims("admin", Set.of("openid", "profile", "email"));
 
         assertThat(userInfoClaims)
                 .containsEntry("sub", "admin")
@@ -47,12 +42,7 @@ class OidcClaimServiceTest {
 
     @Test
     void userInfoClaimsFilterOutUnrequestedStandardClaims() {
-        Authentication principal = principal("admin");
-
-        Map<String, Object> userInfoClaims = oidcClaimService.userInfoClaims(
-                oidcClaimService.idTokenClaims(principal),
-                Set.of("openid")
-        );
+        Map<String, Object> userInfoClaims = oidcClaimService.userInfoClaims("admin", Set.of("openid"));
 
         assertThat(userInfoClaims)
                 .containsEntry("sub", "admin")

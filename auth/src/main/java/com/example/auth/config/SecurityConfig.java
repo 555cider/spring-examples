@@ -1,7 +1,5 @@
 package com.example.auth.config;
 
-import java.util.Map;
-
 import com.example.auth.service.OidcClaimService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,7 +7,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
-import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,20 +35,12 @@ public class SecurityConfig {
         http.securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
                 .with(authorizationServerConfigurer, authorizationServer ->
                         authorizationServer.oidc(oidc -> oidc.userInfoEndpoint(userInfo -> userInfo
-                                .userInfoMapper(context -> {
-                                    Map<String, Object> idTokenClaims = Map.of();
-                                    var idToken = context.getAuthorization().getToken(OidcIdToken.class);
-                                    if (idToken != null) {
-                                        idTokenClaims = idToken.getToken().getClaims();
-                                    }
-
-                                    return new OidcUserInfo(
-                                            oidcClaimService.userInfoClaims(
-                                                    idTokenClaims,
-                                                    context.getAccessToken().getScopes()
-                                            )
-                                    );
-                                }))))
+                                .userInfoMapper(context -> new OidcUserInfo(
+                                        oidcClaimService.userInfoClaims(
+                                                context.getAuthorization().getPrincipalName(),
+                                                context.getAccessToken().getScopes()
+                                        )
+                                )))))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/.well-known/openid-configuration", "/.well-known/jwks.json").permitAll()
                         .anyRequest().authenticated())
