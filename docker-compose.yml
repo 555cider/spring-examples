@@ -43,6 +43,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - NACOS_SERVER_ADDR=nacos:8848
+      - CLIENT_REDIRECT_URI=http://localhost:${CLIENT_PORT}/login/oauth2/code/my-registration
     ports:
       - "${AUTH_PORT}:${AUTH_PORT_DOCKER}"
     depends_on:
@@ -78,6 +79,7 @@ services:
       - NACOS_SERVER_ADDR=nacos:8848
     ports:
       - "${CLIENT_PORT}:${CLIENT_PORT_DOCKER}"
+    network_mode: "host"
     depends_on:
       - nacos
       - auth
