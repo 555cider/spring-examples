@@ -39,6 +39,10 @@
   - username: `user`
   - password: `1234`
   - authority: `ROLE_USER`
+- Default local admin:
+  - username: `admin`
+  - password: `1234`
+  - authority: `ROLE_ADMIN`
 - Default local OAuth2 client:
   - client id: `client_id_1`
   - client secret: `client_secret_1`

@@ -100,29 +100,16 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
-    public ApplicationRunner seedUser(
+    public ApplicationRunner seedUsers(
             UserRepository userRepository,
             UserAuthorityRepository userAuthorityRepository,
             PasswordEncoder passwordEncoder
     ) {
         return args -> {
-            userRepository.findByUsername("user").ifPresentOrElse(existingUser -> {
-                        if (userAuthorityRepository.findAuthoritiesByUserId(existingUser.getId()).isEmpty()) {
-                            userAuthorityRepository.replaceAuthorities(existingUser.getId(), List.of("ROLE_USER"));
-                        }
-                    },
-                    () -> {
-                        User savedUser = userRepository.save(new User(
-                                null,
-                                "user",
-                                passwordEncoder.encode("1234"),
-                                "user@example.com",
-                                null,
-                                null
-                        ));
-
-                        userAuthorityRepository.replaceAuthorities(savedUser.getId(), List.of("ROLE_USER"));
-                    });
+            ensureUser(userRepository, userAuthorityRepository, passwordEncoder,
+                    "user", "user@example.com", List.of("ROLE_USER"));
+            ensureUser(userRepository, userAuthorityRepository, passwordEncoder,
+                    "admin", "admin@example.com", List.of("ROLE_ADMIN"));
         };
     }
 
@@ -149,5 +136,32 @@ public class AuthorizationServerConfig {
         }
 
         return redirectUris;
+    }
+
+    private void ensureUser(
+            UserRepository userRepository,
+            UserAuthorityRepository userAuthorityRepository,
+            PasswordEncoder passwordEncoder,
+            String username,
+            String email,
+            List<String> authorities
+    ) {
+        userRepository.findByUsername(username).ifPresentOrElse(existingUser -> {
+                    if (!userAuthorityRepository.findAuthoritiesByUserId(existingUser.getId()).containsAll(authorities)) {
+                        userAuthorityRepository.replaceAuthorities(existingUser.getId(), authorities);
+                    }
+                },
+                () -> {
+                    User savedUser = userRepository.save(new User(
+                            null,
+                            username,
+                            passwordEncoder.encode("1234"),
+                            email,
+                            null,
+                            null
+                    ));
+
+                    userAuthorityRepository.replaceAuthorities(savedUser.getId(), authorities);
+                });
     }
 }

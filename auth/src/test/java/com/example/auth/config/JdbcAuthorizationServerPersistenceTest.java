@@ -3,6 +3,8 @@ package com.example.auth.config;
 import com.example.auth.service.JdbcUserDetailsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -60,7 +62,24 @@ class JdbcAuthorizationServerPersistenceTest {
     }
 
     @Test
-    void startupCreatesNormalizedAuthorityTableAndSeedsDefaultRole() {
+    void startupCreatesNormalizedAuthorityTableAndSeedsDefaultRoles() throws Exception {
+        ApplicationRunner seedUserRunner = context.getBean("seedUsers", ApplicationRunner.class);
+
+        jdbcTemplate.update("""
+                delete from my_schema.user_authorities
+                where user_id in (
+                    select id
+                    from my_schema.users
+                    where username in (?, ?)
+                )
+                """, "user", "admin");
+        jdbcTemplate.update("""
+                delete from my_schema.users
+                where username in (?, ?)
+                """, "user", "admin");
+
+        seedUserRunner.run(new DefaultApplicationArguments(new String[0]));
+
         Integer authorityTableCount = jdbcTemplate.queryForObject("""
                 select count(*)
                 from information_schema.tables
@@ -79,6 +98,22 @@ class JdbcAuthorizationServerPersistenceTest {
                 """, Integer.class, "user", "ROLE_USER");
 
         assertThat(roleCount).isEqualTo(1);
+
+        Integer adminRoleCount = jdbcTemplate.queryForObject("""
+                select count(*)
+                from my_schema.user_authorities ua
+                join my_schema.users u on u.id = ua.user_id
+                where u.username = ?
+                  and ua.authority = ?
+                """, Integer.class, "admin", "ROLE_ADMIN");
+
+        assertThat(adminRoleCount).isEqualTo(1);
+
+        assertThat(context.getBean("userDetailsService", JdbcUserDetailsService.class)
+                .loadUserByUsername("admin")
+                .getAuthorities())
+                .extracting(GrantedAuthority::getAuthority)
+                .containsExactly("ROLE_ADMIN");
     }
 
     @Test

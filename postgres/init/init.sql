@@ -101,10 +101,20 @@ INSERT INTO my_schema.users (username, password, email, created_at, updated_at)
 VALUES ('user', '$2y$10$L4i8HB/QEWjrv.n4pyrYx.pPkbzUu7/QQMTHpm/uuq3MERPcua4p6', 'user@example.com', current_timestamp, current_timestamp)
 ON CONFLICT (username) DO NOTHING;
 
+INSERT INTO my_schema.users (username, password, email, created_at, updated_at)
+VALUES ('admin', '$2y$10$L4i8HB/QEWjrv.n4pyrYx.pPkbzUu7/QQMTHpm/uuq3MERPcua4p6', 'admin@example.com', current_timestamp, current_timestamp)
+ON CONFLICT (username) DO NOTHING;
+
 INSERT INTO my_schema.user_authorities (user_id, authority)
 SELECT u.id, 'ROLE_USER'
 FROM my_schema.users u
 WHERE u.username = 'user'
+ON CONFLICT (user_id, authority) DO NOTHING;
+
+INSERT INTO my_schema.user_authorities (user_id, authority)
+SELECT u.id, 'ROLE_ADMIN'
+FROM my_schema.users u
+WHERE u.username = 'admin'
 ON CONFLICT (user_id, authority) DO NOTHING;
 
 -- ------------------------------------------------------------
