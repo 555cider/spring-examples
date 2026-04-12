@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: "jdbc:h2:mem:authdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS my_schema\\;SET SCHEMA my_schema"
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - classpath:sql/oauth2-registered-client.sql
+        - classpath:sql/oauth2-authorization.sql
+        - classpath:sql/oauth2-authorization-consent.sql
+        - classpath:sql/users.sql
+
+app:
+  auth:
+    issuer: http://localhost:8080/auth
+  client:
+    redirect-uri: http://127.0.0.1:8011/login/oauth2/code/my-registration

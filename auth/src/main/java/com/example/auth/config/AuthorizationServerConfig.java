@@ -1,0 +1,138 @@
+package com.example.auth.config;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
+import com.example.auth.domain.User;
+import com.example.auth.repository.UserRepository;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+
+@Configuration
+public class AuthorizationServerConfig {
+
+    @Bean
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+
+    @Bean
+    public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
+        return new JdbcRegisteredClientRepository(jdbcTemplate);
+    }
+
+    @Bean
+    public OAuth2AuthorizationService authorizationService(
+            JdbcTemplate jdbcTemplate,
+            RegisteredClientRepository registeredClientRepository
+    ) {
+        return new org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService(
+                jdbcTemplate,
+                registeredClientRepository
+        );
+    }
+
+    @Bean
+    public OAuth2AuthorizationConsentService authorizationConsentService(
+            JdbcTemplate jdbcTemplate,
+            RegisteredClientRepository registeredClientRepository
+    ) {
+        return new org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService(
+                jdbcTemplate,
+                registeredClientRepository
+        );
+    }
+
+    @Bean
+    public ApplicationRunner seedRegisteredClient(
+            RegisteredClientRepository registeredClientRepository,
+            PasswordEncoder passwordEncoder,
+            @Value("${app.client.redirect-uri}") String redirectUri
+    ) {
+        return args -> {
+            if (registeredClientRepository.findByClientId("client_id_1") != null) {
+                return;
+            }
+
+            RegisteredClient.Builder client = RegisteredClient.withId(UUID.randomUUID().toString())
+                    .clientId("client_id_1")
+                    .clientSecret(passwordEncoder.encode("client_secret_1"))
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+                    .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                    .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                    .scope(OidcScopes.OPENID)
+                    .scope("profile")
+                    .scope("email");
+
+            supportedRedirectUris(redirectUri).forEach(client::redirectUri);
+
+            registeredClientRepository.save(client.build());
+        };
+    }
+
+    @Bean
+    public ApplicationRunner seedUser(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        return args -> {
+            if (userRepository.findByUsername("user").isPresent()) {
+                return;
+            }
+
+            userRepository.save(new User(
+                    null,
+                    "user",
+                    passwordEncoder.encode("1234"),
+                    "user@example.com",
+                    null,
+                    null,
+                    "ROLE_USER"
+            ));
+        };
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
+        return NimbusJwtDecoder.withJwkSource(jwkSource).build();
+    }
+
+    @Bean
+    public AuthorizationServerSettings authorizationServerSettings(@Value("${app.auth.issuer}") String issuer) {
+        return AuthorizationServerSettings.builder()
+                .issuer(issuer)
+                .authorizationEndpoint("/oauth2/authorization")
+                .jwkSetEndpoint("/.well-known/jwks.json")
+                .build();
+    }
+
+    private Set<String> supportedRedirectUris(String configuredRedirectUri) {
+        Set<String> redirectUris = new LinkedHashSet<>();
+        redirectUris.add(configuredRedirectUri);
+
+        if ("http://127.0.0.1:8011/login/oauth2/code/my-registration".equals(configuredRedirectUri)) {
+            redirectUris.add("http://127.0.0.1:8011/oauth2/code/my-registration");
+        } else if ("http://127.0.0.1:8011/oauth2/code/my-registration".equals(configuredRedirectUri)) {
+            redirectUris.add("http://127.0.0.1:8011/login/oauth2/code/my-registration");
+        }
+
+        return redirectUris;
+    }
+}

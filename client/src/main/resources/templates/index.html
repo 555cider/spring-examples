@@ -1,13 +1,19 @@
 <!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1" name="viewport">
-    <title>Spring Authorization Server sample</title>
+    <meta content="width=device-width, initial-scale=1" name="viewport"/>
+    <title>Spring client</title>
 </head>
 <body>
-<div class="container">
-    <h1>Login Success</h1>
-</div>
+<main>
+    <h1>Spring client</h1>
+    <p>This page is public. Sign in to view your profile.</p>
+    <p>
+        <a th:href="@{/oauth2/authorization/my-registration}">Sign in</a>
+        <span> | </span>
+        <a th:href="@{/profile}">Profile</a>
+    </p>
+</main>
 </body>
 </html>

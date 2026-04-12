@@ -13,16 +13,15 @@ spring:
             client-secret: client_secret_1
             client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/oauth2/code/{registrationId}"
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
         provider:
           my-provider:
-            authorization-uri: http://localhost:8080/auth/auth/oauth2/authorization
-            token-uri: http://localhost:8080/auth/oauth2/token
-            jwk-set-uri: http://localhost:8080/auth/.well-known/jwks.json
             issuer-uri: http://localhost:8080/auth
-            user-info-uri: http://localhost:8080/auth/oauth2/userinfo
-            user-name-attribute: sub
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
 
 server:
   port: 8011
@@ -43,16 +42,15 @@ spring:
             client-secret: client_secret_1
             client-authentication-method: client_secret_post
             authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/oauth2/code/{registrationId}"
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope: openid,profile,email
         provider:
           my-provider:
-            authorization-uri: ${AUTH_ISSUER_URI}/oauth2/authorization
-            token-uri: ${AUTH_ISSUER_URI}/oauth2/token
-            jwk-set-uri: ${AUTH_ISSUER_URI}/.well-known/jwks.json
             issuer-uri: ${AUTH_ISSUER_URI}
-            user-info-uri: ${AUTH_ISSUER_URI}/oauth2/userinfo
-            user-name-attribute: sub
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR}
 
 server:
   port: ${CLIENT_PORT}

@@ -3,33 +3,31 @@ spring:
   config:
     activate:
       on-profile: local
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: http://localhost:8080/auth/.well-known/jwks.json
-          issuer-uri: http://localhost:8080/auth
-  r2dbc:
-    url: r2dbc:postgresql://localhost:5432/my_db?serverTimezone=Asia/Seoul
+  datasource:
+    url: jdbc:postgresql://localhost:5432/my_db?currentSchema=my_schema
     username: postgres
     password: 1234
-    properties:
-      schema: my_schema
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 0
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - classpath:sql/oauth2-registered-client.sql
+        - classpath:sql/oauth2-authorization.sql
+        - classpath:sql/oauth2-authorization-consent.sql
+        - classpath:sql/users.sql
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
 
 server:
   port: 9000
 
-eureka:
-  instance:
-    hostname: localhost
+app:
+  auth:
+    issuer: http://localhost:8080/auth
   client:
-    service-url:
-      defaultZone: http://${eureka.instance.hostname}:8761/eureka/
+    redirect-uri: http://127.0.0.1:8011/login/oauth2/code/my-registration
 
 ---
 # dev
@@ -37,62 +35,39 @@ spring:
   config:
     activate:
       on-profile: dev
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${AUTH_ISSUER_URI}/.well-known/jwks.json
-          issuer-uri: ${AUTH_ISSUER_URI}
-  r2dbc:
-    url: r2dbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?serverTimezone=Asia/Seoul
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?currentSchema=${POSTGRES_SCHEMA}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
-    properties:
-      schema: ${POSTGRES_SCHEMA}
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
-      database: 0
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - classpath:sql/oauth2-registered-client.sql
+        - classpath:sql/oauth2-authorization.sql
+        - classpath:sql/oauth2-authorization-consent.sql
+        - classpath:sql/users.sql
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR}
 
 server:
   port: ${AUTH_PORT}
 
-eureka:
-  instance:
-    prefer-ip-address: true
+app:
+  auth:
+    issuer: ${AUTH_ISSUER_URI}
   client:
-    service-url:
-      defaultZone: ${DISCOVERY_BASE_URL}/eureka/
+    redirect-uri: ${CLIENT_REDIRECT_URI}
 
 ---
 # common
 spring:
   application:
     name: auth
-  main:
-    allow-bean-definition-overriding: true
   messages:
     basename: messages
-  r2dbc:
-    pool:
-      initial-size: 5
-      max-size: 10
-      max-idle-time: 60000
-      max-lifetime: 180000
-      max-create-connection-time: 2s
 
 server:
   shutdown: graceful
-  netty:
-    connection-timeout: 2s
-    idle-timeout: 15s
-
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
-
-logging:
-  level:
-    root: debug
