@@ -4,7 +4,9 @@ import com.example.auth.service.JdbcUserDetailsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -39,6 +41,9 @@ class JdbcAuthorizationServerPersistenceTest {
     @Autowired
     private ApplicationContext context;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Test
     void authorizationServerPersistenceBeansAreJdbcBacked() {
         RegisteredClientRepository registeredClientRepository = context.getBean(RegisteredClientRepository.class);
@@ -52,6 +57,62 @@ class JdbcAuthorizationServerPersistenceTest {
         assertThat(consentService).isInstanceOf(JdbcOAuth2AuthorizationConsentService.class);
         assertThat(userDetailsService).isInstanceOf(JdbcUserDetailsService.class);
         assertThat(userDetailsService.loadUserByUsername("user").getUsername()).isEqualTo("user");
+    }
+
+    @Test
+    void startupCreatesNormalizedAuthorityTableAndSeedsDefaultRole() {
+        Integer authorityTableCount = jdbcTemplate.queryForObject("""
+                select count(*)
+                from information_schema.tables
+                where table_schema = 'my_schema'
+                  and table_name = 'user_authorities'
+                """, Integer.class);
+
+        assertThat(authorityTableCount).isEqualTo(1);
+
+        Integer roleCount = jdbcTemplate.queryForObject("""
+                select count(*)
+                from my_schema.user_authorities ua
+                join my_schema.users u on u.id = ua.user_id
+                where u.username = ?
+                  and ua.authority = ?
+                """, Integer.class, "user", "ROLE_USER");
+
+        assertThat(roleCount).isEqualTo(1);
+    }
+
+    @Test
+    void userDetailsServiceLoadsAuthoritiesFromNormalizedTable() {
+        JdbcUserDetailsService userDetailsService = context.getBean("userDetailsService", JdbcUserDetailsService.class);
+
+        jdbcTemplate.execute("""
+                create table if not exists my_schema.user_authorities (
+                    user_id bigint not null,
+                    authority varchar(100) not null,
+                    primary key (user_id, authority)
+                )
+                """);
+
+        Long userId = jdbcTemplate.queryForObject(
+                "select id from my_schema.users where username = ?",
+                Long.class,
+                "user"
+        );
+
+        jdbcTemplate.update("""
+                insert into my_schema.user_authorities (user_id, authority)
+                values (?, ?)
+                on conflict do nothing
+                """,
+                userId,
+                "ROLE_ADMIN"
+        );
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername("user");
+
+        assertThat(userDetails.getAuthorities())
+                .extracting(GrantedAuthority::getAuthority)
+                .contains("ROLE_ADMIN");
     }
 
     @Test

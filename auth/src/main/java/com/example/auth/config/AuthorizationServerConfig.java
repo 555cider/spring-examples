@@ -1,5 +1,6 @@
 package com.example.auth.config;
 
+import java.util.List;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -7,6 +8,7 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import com.example.auth.domain.User;
+import com.example.auth.repository.UserAuthorityRepository;
 import com.example.auth.repository.UserRepository;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
@@ -98,21 +100,29 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
-    public ApplicationRunner seedUser(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public ApplicationRunner seedUser(
+            UserRepository userRepository,
+            UserAuthorityRepository userAuthorityRepository,
+            PasswordEncoder passwordEncoder
+    ) {
         return args -> {
-            if (userRepository.findByUsername("user").isPresent()) {
-                return;
-            }
+            userRepository.findByUsername("user").ifPresentOrElse(existingUser -> {
+                        if (userAuthorityRepository.findAuthoritiesByUserId(existingUser.getId()).isEmpty()) {
+                            userAuthorityRepository.replaceAuthorities(existingUser.getId(), List.of("ROLE_USER"));
+                        }
+                    },
+                    () -> {
+                        User savedUser = userRepository.save(new User(
+                                null,
+                                "user",
+                                passwordEncoder.encode("1234"),
+                                "user@example.com",
+                                null,
+                                null
+                        ));
 
-            userRepository.save(new User(
-                    null,
-                    "user",
-                    passwordEncoder.encode("1234"),
-                    "user@example.com",
-                    null,
-                    null,
-                    "ROLE_USER"
-            ));
+                        userAuthorityRepository.replaceAuthorities(savedUser.getId(), List.of("ROLE_USER"));
+                    });
         };
     }
 

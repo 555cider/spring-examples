@@ -5,7 +5,102 @@ create table if not exists my_schema.users (
     username varchar(100) not null unique,
     password varchar(200) not null,
     email varchar(200) not null unique,
-    created_at timestamp with time zone default current_timestamp,
-    updated_at timestamp with time zone default current_timestamp,
-    authorities varchar(500) not null
+    created_at timestamp with time zone not null default current_timestamp,
+    updated_at timestamp with time zone not null default current_timestamp
 );
+
+alter table my_schema.users
+    add column if not exists created_at timestamp with time zone default current_timestamp;
+
+alter table my_schema.users
+    add column if not exists updated_at timestamp with time zone default current_timestamp;
+
+do '
+begin
+    if exists (
+        select 1
+        from information_schema.columns
+        where table_schema = ''my_schema''
+          and table_name = ''users''
+          and column_name = ''created_at''
+          and data_type <> ''timestamp with time zone''
+    ) then
+        execute ''alter table my_schema.users alter column created_at type timestamp with time zone using created_at at time zone current_setting(''''TIMEZONE'''')'';
+    end if;
+
+    if exists (
+        select 1
+        from information_schema.columns
+        where table_schema = ''my_schema''
+          and table_name = ''users''
+          and column_name = ''updated_at''
+          and data_type <> ''timestamp with time zone''
+    ) then
+        execute ''alter table my_schema.users alter column updated_at type timestamp with time zone using updated_at at time zone current_setting(''''TIMEZONE'''')'';
+    end if;
+end
+';
+
+update my_schema.users
+set created_at = current_timestamp
+where created_at is null;
+
+update my_schema.users
+set updated_at = coalesce(updated_at, created_at, current_timestamp)
+where updated_at is null;
+
+alter table my_schema.users
+    alter column created_at set default current_timestamp;
+
+alter table my_schema.users
+    alter column created_at set not null;
+
+alter table my_schema.users
+    alter column updated_at set default current_timestamp;
+
+alter table my_schema.users
+    alter column updated_at set not null;
+
+create table if not exists my_schema.user_authorities (
+    user_id bigint not null references my_schema.users (id) on delete cascade,
+    authority varchar(100) not null,
+    primary key (user_id, authority)
+);
+
+do '
+begin
+    if exists (
+        select 1
+        from information_schema.columns
+        where table_schema = ''my_schema''
+          and table_name = ''users''
+          and column_name = ''authorities''
+    ) then
+        insert into my_schema.user_authorities (user_id, authority)
+        select u.id, authority
+        from my_schema.users u
+        cross join lateral regexp_split_to_table(coalesce(u.authorities, ''''), E''\\s+'') as authority
+        where authority <> ''''
+        on conflict do nothing;
+
+        alter table my_schema.users drop column authorities;
+    end if;
+end
+';
+
+create or replace function my_schema.set_users_updated_at()
+returns trigger
+language plpgsql
+as '
+begin
+    new.updated_at = current_timestamp;
+    return new;
+end;
+';
+
+drop trigger if exists users_set_updated_at on my_schema.users;
+
+create trigger users_set_updated_at
+before update on my_schema.users
+for each row
+execute function my_schema.set_users_updated_at();

@@ -1,5 +1,7 @@
 create schema if not exists my_schema;
 
+drop table if exists my_schema.client;
+
 create table if not exists my_schema.oauth2_registered_client (
     id varchar(100) primary key,
     client_id varchar(100) not null unique,

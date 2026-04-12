@@ -13,6 +13,7 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 import com.example.auth.repository.UserRepository;
+import com.example.auth.repository.UserAuthorityRepository;
 import com.example.auth.service.JdbcUserDetailsService;
 
 import static org.springframework.http.MediaType.TEXT_HTML;
@@ -57,8 +58,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JdbcUserDetailsService userDetailsService(UserRepository userRepository) {
-        return new JdbcUserDetailsService(userRepository);
+    public JdbcUserDetailsService userDetailsService(
+            UserRepository userRepository,
+            UserAuthorityRepository userAuthorityRepository
+    ) {
+        return new JdbcUserDetailsService(userRepository, userAuthorityRepository);
     }
 
 }
