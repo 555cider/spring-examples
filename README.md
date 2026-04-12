@@ -7,6 +7,16 @@ Spring Boot 4 sample workspace with:
 - `client`: servlet OAuth2 client
 - `nacos`: service discovery for local runs
 
+## Auth persistence
+
+- Auth uses PostgreSQL schema `my_schema`.
+- Runtime schema initialization lives in `auth/src/main/resources/sql/*.sql`.
+- Fresh Docker-local seed data lives in `postgres/init/init.sql`.
+- Current auth schema uses `oauth2_registered_client`, `oauth2_authorization`, `oauth2_authorization_consent`, `users`, and `user_authorities`.
+- Legacy `my_schema.client` and `users.authorities` are cleaned up automatically during schema initialization.
+
+Detailed notes are in `auth/README.md`.
+
 ## Local infrastructure
 
 ```bash
