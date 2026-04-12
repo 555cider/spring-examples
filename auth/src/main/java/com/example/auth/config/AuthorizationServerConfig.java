@@ -147,7 +147,8 @@ public class AuthorizationServerConfig {
             List<String> authorities
     ) {
         userRepository.findByUsername(username).ifPresentOrElse(existingUser -> {
-                    if (!userAuthorityRepository.findAuthoritiesByUserId(existingUser.getId()).containsAll(authorities)) {
+                    if (!new LinkedHashSet<>(userAuthorityRepository.findAuthoritiesByUserId(existingUser.getId()))
+                            .equals(new LinkedHashSet<>(authorities))) {
                         userAuthorityRepository.replaceAuthorities(existingUser.getId(), authorities);
                     }
                 },

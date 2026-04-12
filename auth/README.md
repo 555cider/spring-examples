@@ -37,10 +37,12 @@
 
 - Default local user:
   - username: `user`
+  - email: `user@example.com`
   - password: `1234`
   - authority: `ROLE_USER`
 - Default local admin:
   - username: `admin`
+  - email: `admin@example.com`
   - password: `1234`
   - authority: `ROLE_ADMIN`
 - Default local OAuth2 client:

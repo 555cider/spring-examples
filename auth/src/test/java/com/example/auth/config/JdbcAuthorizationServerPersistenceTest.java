@@ -117,6 +117,72 @@ class JdbcAuthorizationServerPersistenceTest {
     }
 
     @Test
+    void seedUsersRepairsExistingAuthoritiesToExactDefaults() throws Exception {
+        ApplicationRunner seedUserRunner = context.getBean("seedUsers", ApplicationRunner.class);
+
+        deleteUser("user");
+        deleteUser("admin");
+        insertUser("user", "user@example.com");
+        insertUser("admin", "admin@example.com");
+
+        Long userId = userId("user");
+        Long adminId = userId("admin");
+
+        jdbcTemplate.update("""
+                insert into my_schema.user_authorities (user_id, authority)
+                values (?, ?), (?, ?)
+                on conflict do nothing
+                """,
+                userId,
+                "ROLE_USER",
+                userId,
+                "ROLE_ADMIN"
+        );
+        jdbcTemplate.update("""
+                insert into my_schema.user_authorities (user_id, authority)
+                values (?, ?), (?, ?)
+                on conflict do nothing
+                """,
+                adminId,
+                "ROLE_ADMIN",
+                adminId,
+                "ROLE_USER"
+        );
+
+        seedUserRunner.run(new DefaultApplicationArguments(new String[0]));
+
+        assertThat(jdbcTemplate.queryForList("""
+                select authority
+                from my_schema.user_authorities ua
+                join my_schema.users u on u.id = ua.user_id
+                where u.username = ?
+                order by authority
+                """, String.class, "user"))
+                .containsExactly("ROLE_USER");
+
+        assertThat(jdbcTemplate.queryForList("""
+                select authority
+                from my_schema.user_authorities ua
+                join my_schema.users u on u.id = ua.user_id
+                where u.username = ?
+                order by authority
+                """, String.class, "admin"))
+                .containsExactly("ROLE_ADMIN");
+
+        assertThat(context.getBean("userDetailsService", JdbcUserDetailsService.class)
+                .loadUserByUsername("user")
+                .getAuthorities())
+                .extracting(GrantedAuthority::getAuthority)
+                .containsExactly("ROLE_USER");
+
+        assertThat(context.getBean("userDetailsService", JdbcUserDetailsService.class)
+                .loadUserByUsername("admin")
+                .getAuthorities())
+                .extracting(GrantedAuthority::getAuthority)
+                .containsExactly("ROLE_ADMIN");
+    }
+
+    @Test
     void userDetailsServiceLoadsAuthoritiesFromNormalizedTable() {
         JdbcUserDetailsService userDetailsService = context.getBean("userDetailsService", JdbcUserDetailsService.class);
 
@@ -205,5 +271,39 @@ class JdbcAuthorizationServerPersistenceTest {
                 "code-value-with-principal",
                 new OAuth2TokenType(OAuth2ParameterNames.CODE)
         )).doesNotThrowAnyException();
+    }
+
+    private void deleteUser(String username) {
+        jdbcTemplate.update("""
+                delete from my_schema.user_authorities
+                where user_id in (
+                    select id
+                    from my_schema.users
+                    where username = ?
+                )
+                """, username);
+        jdbcTemplate.update("""
+                delete from my_schema.users
+                where username = ?
+                """, username);
+    }
+
+    private void insertUser(String username, String email) {
+        jdbcTemplate.update("""
+                insert into my_schema.users (username, password, email, created_at, updated_at)
+                values (?, ?, ?, current_timestamp, current_timestamp)
+                """,
+                username,
+                "$2y$10$L4i8HB/QEWjrv.n4pyrYx.pPkbzUu7/QQMTHpm/uuq3MERPcua4p6",
+                email
+        );
+    }
+
+    private Long userId(String username) {
+        return jdbcTemplate.queryForObject(
+                "select id from my_schema.users where username = ?",
+                Long.class,
+                username
+        );
     }
 }
