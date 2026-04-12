@@ -9,6 +9,8 @@
 <main>
     <h1>Profile</h1>
     <p>Authenticated as <span th:text="${username}">user</span>.</p>
+    <p>Email: <span th:text="${email}">user@example.com</span>.</p>
+    <p>Roles: <span th:text="${#strings.listJoin(roles, ', ')}">ROLE_USER</span>.</p>
     <p><a th:href="@{/}">Back to home</a></p>
 </main>
 </body>

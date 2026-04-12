@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -96,5 +97,37 @@ class JwtTokenCustomizerTest {
 
         assertThat(context.getClaims().build().getClaimAsStringList("roles"))
                 .isEqualTo(List.of("ROLE_ADMIN", "ROLE_USER"));
+    }
+
+    @Test
+    void addsOidcClaimsToIdToken() {
+        RegisteredClient registeredClient = registeredClientRepository.findByClientId("client_id_1");
+        UserDetails userDetails = userDetailsService.loadUserByUsername("admin");
+        Authentication principal = UsernamePasswordAuthenticationToken.authenticated(
+                userDetails,
+                "N/A",
+                userDetails.getAuthorities()
+        );
+
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder();
+        JwtEncodingContext context = JwtEncodingContext.with(
+                        JwsHeader.with(SignatureAlgorithm.RS512),
+                        claims
+                )
+                .registeredClient(registeredClient)
+                .principal(principal)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .tokenType(new OAuth2TokenType(OidcParameterNames.ID_TOKEN))
+                .build();
+
+        jwtTokenCustomizer.customize(context);
+
+        JwtClaimsSet builtClaims = context.getClaims().build();
+
+        assertThat(builtClaims.getClaimAsString("preferred_username")).isEqualTo("admin");
+        assertThat(builtClaims.getClaimAsString("email")).isEqualTo("admin@example.com");
+        assertThat((Boolean) builtClaims.getClaim("email_verified")).isEqualTo(true);
+        assertThat((Object) builtClaims.getClaim("updated_at")).isNotNull();
+        assertThat(builtClaims.getClaimAsStringList("roles")).isEqualTo(List.of("ROLE_ADMIN"));
     }
 }

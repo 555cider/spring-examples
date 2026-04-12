@@ -10,6 +10,7 @@ import com.sun.net.httpserver.HttpServer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
@@ -99,6 +100,35 @@ class ClientSecurityConfigTest {
         mockMvc.perform(get("/profile").with(oidcLogin()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("profile"));
+    }
+
+    @Test
+    void authenticatedProfileRequestExposesOidcClaims() throws Exception {
+        mockMvc.perform(get("/profile").with(oidcLogin()
+                        .idToken(token -> token
+                                .subject("alice")
+                                .claim("preferred_username", "alice")
+                                .claim("email", "alice@example.com")
+                                .claim("roles", java.util.List.of("ROLE_ADMIN")))
+                        .userInfoToken(userInfo -> userInfo
+                                .subject("alice")
+                                .email("alice@example.com")
+                                .preferredUsername("alice")
+                                .claim("roles", java.util.List.of("ROLE_ADMIN")))))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile"))
+                .andExpect(model().attribute("username", "alice"))
+                .andExpect(model().attribute("email", "alice@example.com"))
+                .andExpect(model().attribute("roles", java.util.List.of("ROLE_ADMIN")));
+    }
+
+    @Test
+    void authenticatedProfileRequestFallsBackToSubjectWhenPreferredUsernameIsMissing() throws Exception {
+        mockMvc.perform(get("/profile").with(oidcLogin()
+                        .idToken(token -> token.subject("fallback-user"))))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile"))
+                .andExpect(model().attribute("username", "fallback-user"));
     }
 
     @Test

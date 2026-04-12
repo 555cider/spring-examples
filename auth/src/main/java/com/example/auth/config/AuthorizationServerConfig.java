@@ -4,13 +4,13 @@ import java.util.List;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
 import com.example.auth.domain.User;
 import com.example.auth.repository.UserAuthorityRepository;
 import com.example.auth.repository.UserRepository;
+import com.example.auth.service.OidcClaimService;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
+import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
@@ -135,26 +136,22 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
+    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer(OidcClaimService oidcClaimService) {
         return context -> {
-            if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                return;
-            }
-
             Authentication principal = context.getPrincipal();
             if (principal == null) {
                 return;
             }
 
-            context.getClaims().claim(
-                    "roles",
-                    principal.getAuthorities().stream()
-                            .map(authority -> authority.getAuthority())
-                            .filter(authority -> authority.startsWith("ROLE_"))
-                            .distinct()
-                            .sorted()
-                            .collect(Collectors.toList())
-            );
+            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+                context.getClaims().claim("roles", oidcClaimService.roleClaims(principal));
+                return;
+            }
+
+            if (OidcParameterNames.ID_TOKEN.equals(context.getTokenType().getValue())) {
+                oidcClaimService.idTokenClaims(principal)
+                        .forEach((claimName, claimValue) -> context.getClaims().claim(claimName, claimValue));
+            }
         };
     }
 

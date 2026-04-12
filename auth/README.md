@@ -54,6 +54,18 @@ The application also seeds the same logical defaults at startup if they are abse
 
 The startup seeder does not run in `dev` or production profiles.
 
+## OIDC claims
+
+- Access tokens include a custom `roles` claim derived from `ROLE_*` authorities.
+- ID tokens include:
+  - `sub`
+  - `preferred_username`
+  - `email`
+  - `email_verified`
+  - `updated_at`
+  - `roles`
+- The UserInfo endpoint returns the same standard claims filtered by requested scopes, plus the custom `roles` claim.
+
 ## Operational notes
 
 - If you want a completely fresh Docker-local database, remove the disposable local Postgres volume data under `postgres/data` before starting the stack again.
