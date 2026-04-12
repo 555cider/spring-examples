@@ -43,5 +43,9 @@ logs
 **/build/
 build
 
+# Local runtime config and volumes
+.env
+postgres/data/
+
 # Local worktrees
 .worktrees/

@@ -10,7 +10,14 @@ Spring Boot 4 sample workspace with:
 ## Local infrastructure
 
 ```bash
+cp .env.example .env
 docker compose up -d nacos postgres redis
+```
+
+## Local full stack
+
+```bash
+docker compose up -d --build
 ```
 
 ## Local apps

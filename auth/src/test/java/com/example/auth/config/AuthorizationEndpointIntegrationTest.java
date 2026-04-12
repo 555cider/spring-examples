@@ -41,7 +41,9 @@ class AuthorizationEndpointIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "http://127.0.0.1:8011/oauth2/code/my-registration",
-            "http://127.0.0.1:8011/login/oauth2/code/my-registration"
+            "http://127.0.0.1:8011/login/oauth2/code/my-registration",
+            "http://localhost:8011/oauth2/code/my-registration",
+            "http://localhost:8011/login/oauth2/code/my-registration"
     })
     void authorizationEndpointAcceptsSupportedRedirectUris(String redirectUri) throws Exception {
         URI uri = UriComponentsBuilder.fromUriString("http://127.0.0.1:" + port + "/oauth2/authorization")
@@ -64,5 +66,35 @@ class AuthorizationEndpointIntegrationTest {
 
         assertEquals(302, response.statusCode());
         assertTrue(response.headers().firstValue("Location").orElse("").contains("/login"));
+    }
+
+    @org.junit.jupiter.api.Test
+    void authorizationEndpointUsesForwardedHeadersForLoginRedirect() throws Exception {
+        URI uri = UriComponentsBuilder.fromUriString("http://127.0.0.1:" + port + "/oauth2/authorization")
+                .queryParam("response_type", "code")
+                .queryParam("client_id", "client_id_1")
+                .queryParam("scope", "openid")
+                .queryParam("redirect_uri", "http://localhost:8011/login/oauth2/code/my-registration")
+                .queryParam("state", "state-123")
+                .queryParam("nonce", "nonce-123")
+                .queryParam("code_challenge", "Z_P4EKbGwIkA01e3Y5fp4tMCvn_Ae5nUw7qY7XwkTrQ")
+                .queryParam("code_challenge_method", "S256")
+                .build()
+                .encode()
+                .toUri();
+
+        HttpResponse<Void> response = httpClient.send(
+                HttpRequest.newBuilder(uri)
+                        .header("X-Forwarded-Proto", "http")
+                        .header("X-Forwarded-Host", "localhost")
+                        .header("X-Forwarded-Port", "8080")
+                        .header("X-Forwarded-Prefix", "/auth")
+                        .GET()
+                        .build(),
+                HttpResponse.BodyHandlers.discarding()
+        );
+
+        assertEquals(302, response.statusCode());
+        assertEquals("http://localhost:8080/auth/login", response.headers().firstValue("Location").orElseThrow());
     }
 }

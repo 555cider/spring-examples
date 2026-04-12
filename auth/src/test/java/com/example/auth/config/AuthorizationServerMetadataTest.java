@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.env.Environment;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -22,6 +23,9 @@ class AuthorizationServerMetadataTest {
 
     @Autowired
     private WebApplicationContext context;
+
+    @Autowired
+    private Environment environment;
 
     private MockMvc mockMvc;
 
@@ -49,5 +53,11 @@ class AuthorizationServerMetadataTest {
                 .andExpect(jsonPath("$.keys[0].n").exists())
                 .andExpect(jsonPath("$.keys[0].e").exists())
                 .andExpect(jsonPath("$.keys[0].d").doesNotExist());
+    }
+
+    @Test
+    void authUsesDedicatedSessionCookieName() {
+        org.assertj.core.api.Assertions.assertThat(environment.getProperty("server.servlet.session.cookie.name"))
+                .isEqualTo("AUTHSESSION");
     }
 }

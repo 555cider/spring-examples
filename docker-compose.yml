@@ -7,6 +7,9 @@ services:
     environment:
       MODE: standalone
       NACOS_AUTH_ENABLE: "false"
+      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN}
+      NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY}
+      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE}
     ports:
       - "8848:8848"
 
@@ -23,6 +26,11 @@ services:
       - ./postgres/config/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./postgres/init:/docker-entrypoint-initdb.d
     command: postgres -c 'config_file=/etc/postgresql/postgresql.conf'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   redis:
     container_name: redis
@@ -35,6 +43,7 @@ services:
 
   auth:
     container_name: auth
+    restart: on-failure
     build:
       context: .
       dockerfile: auth/Dockerfile
@@ -47,8 +56,10 @@ services:
     ports:
       - "${AUTH_PORT}:${AUTH_PORT_DOCKER}"
     depends_on:
-      - nacos
-      - postgres
+      nacos:
+        condition: service_started
+      postgres:
+        condition: service_healthy
 
   gateway:
     container_name: gateway
@@ -69,6 +80,7 @@ services:
 
   client:
     container_name: client
+    restart: on-failure
     build:
       context: .
       dockerfile: client/Dockerfile
@@ -76,7 +88,7 @@ services:
       - .env
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - NACOS_SERVER_ADDR=nacos:8848
+      - NACOS_SERVER_ADDR=127.0.0.1:8848
     ports:
       - "${CLIENT_PORT}:${CLIENT_PORT_DOCKER}"
     network_mode: "host"

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.ActiveProfiles;
@@ -37,6 +38,9 @@ class ClientSecurityConfigTest {
 
     @Autowired
     private WebApplicationContext context;
+
+    @Autowired
+    private Environment environment;
 
     private MockMvc mockMvc;
 
@@ -103,6 +107,18 @@ class ClientSecurityConfigTest {
 
         assertThat(context.getBeanNamesForType(discoveryClientType))
                 .isNotEmpty();
+    }
+
+    @Test
+    void serviceAutoRegistrationIsDisabledForClientApplication() {
+        assertThat(environment.getProperty("spring.cloud.service-registry.auto-registration.enabled", Boolean.class))
+                .isFalse();
+    }
+
+    @Test
+    void clientUsesDedicatedSessionCookieName() {
+        assertThat(environment.getProperty("server.servlet.session.cookie.name"))
+                .isEqualTo("CLIENTSESSION");
     }
 
     private static void handleDiscoveryRequest(HttpExchange exchange) throws IOException {

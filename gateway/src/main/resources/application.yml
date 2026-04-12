@@ -69,6 +69,8 @@ spring:
               predicates:
                 - Path=/auth/**
               filters:
+                - PreserveHostHeader
+                - SetRequestHeader=X-Forwarded-Prefix, /auth
                 - RewritePath=/auth/?(?<segment>.*), /$\{segment}
                 - name: RequestSize
                   args:

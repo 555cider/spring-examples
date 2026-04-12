@@ -30,6 +30,13 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 
 @Configuration
 public class AuthorizationServerConfig {
+    private static final Set<String> LOCAL_REDIRECT_URIS = Set.of(
+            "http://127.0.0.1:8011/login/oauth2/code/my-registration",
+            "http://127.0.0.1:8011/oauth2/code/my-registration",
+            "http://localhost:8011/login/oauth2/code/my-registration",
+            "http://localhost:8011/oauth2/code/my-registration"
+    );
+
 
     @Bean
     public JdbcTemplate jdbcTemplate(DataSource dataSource) {
@@ -127,10 +134,8 @@ public class AuthorizationServerConfig {
         Set<String> redirectUris = new LinkedHashSet<>();
         redirectUris.add(configuredRedirectUri);
 
-        if ("http://127.0.0.1:8011/login/oauth2/code/my-registration".equals(configuredRedirectUri)) {
-            redirectUris.add("http://127.0.0.1:8011/oauth2/code/my-registration");
-        } else if ("http://127.0.0.1:8011/oauth2/code/my-registration".equals(configuredRedirectUri)) {
-            redirectUris.add("http://127.0.0.1:8011/login/oauth2/code/my-registration");
+        if (LOCAL_REDIRECT_URIS.contains(configuredRedirectUri)) {
+            redirectUris.addAll(LOCAL_REDIRECT_URIS);
         }
 
         return redirectUris;

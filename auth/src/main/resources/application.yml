@@ -71,3 +71,8 @@ spring:
 
 server:
   shutdown: graceful
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        name: AUTHSESSION

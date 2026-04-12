@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: "jdbc:h2:mem:authdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS my_schema\\;SET SCHEMA my_schema"
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: "jdbc:tc:postgresql:16:///authdb?currentSchema=my_schema"
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: test
+    password: test
   sql:
     init:
       mode: always
