@@ -75,3 +75,7 @@ spring:
     nacos:
       discovery:
         register-enabled: false
+
+app:
+  logging:
+    path: ${LOG_PATH:./logs}

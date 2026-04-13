@@ -71,6 +71,10 @@ spring:
   messages:
     basename: messages
 
+app:
+  logging:
+    path: ${LOG_PATH:./logs}
+
 server:
   shutdown: graceful
   forward-headers-strategy: framework

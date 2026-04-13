@@ -90,3 +90,7 @@ spring:
   data:
     redis:
       time-to-live: 3600000
+
+app:
+  logging:
+    path: ${LOG_PATH:./logs}
