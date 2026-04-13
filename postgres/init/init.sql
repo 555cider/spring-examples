@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS my_schema.users (
    username varchar(100) NOT NULL UNIQUE,
    password varchar(200) NOT NULL,
    email varchar(200) NOT NULL UNIQUE,
+   tenant_id varchar(100) NOT NULL DEFAULT 'tenant-default',
    created_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
    updated_at timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -97,8 +98,8 @@ BEFORE UPDATE ON my_schema.users
 FOR EACH ROW
 EXECUTE FUNCTION my_schema.set_users_updated_at();
 
-INSERT INTO my_schema.users (username, password, email, created_at, updated_at)
-VALUES ('user', '$2y$10$L4i8HB/QEWjrv.n4pyrYx.pPkbzUu7/QQMTHpm/uuq3MERPcua4p6', 'user@example.com', current_timestamp, current_timestamp)
+INSERT INTO my_schema.users (username, password, email, tenant_id, created_at, updated_at)
+VALUES ('user', '$2y$10$L4i8HB/QEWjrv.n4pyrYx.pPkbzUu7/QQMTHpm/uuq3MERPcua4p6', 'user@example.com', 'tenant-alpha', current_timestamp, current_timestamp)
 ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO my_schema.user_authorities (user_id, authority)

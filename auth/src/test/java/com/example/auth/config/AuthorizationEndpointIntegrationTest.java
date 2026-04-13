@@ -138,8 +138,10 @@ class AuthorizationEndpointIntegrationTest {
         Jwt idToken = jwtDecoder.decode(tokenResponse.idToken());
 
         assertThat(accessToken.getClaimAsStringList("roles")).containsExactly("ROLE_ADMIN");
+        assertThat(accessToken.getClaimAsString("tenant")).isEqualTo("tenant-alpha");
         assertThat(idToken.getClaimAsString("preferred_username")).isEqualTo("admin");
         assertThat(idToken.getClaimAsString("email")).isEqualTo("admin@example.com");
+        assertThat(idToken.getClaimAsString("tenant")).isEqualTo("tenant-alpha");
         assertThat(idToken.getClaimAsStringList("roles")).containsExactly("ROLE_ADMIN");
 
         HttpResponse<String> userInfoResponse = httpClient.send(
@@ -164,6 +166,7 @@ class AuthorizationEndpointIntegrationTest {
                 .containsEntry("sub", "admin")
                 .containsEntry("preferred_username", "admin")
                 .containsEntry("email", "admin@example.com")
+                .containsEntry("tenant", "tenant-alpha")
                 .containsEntry("email_verified", true);
         assertThat(userInfo.get("roles")).isEqualTo(java.util.List.of("ROLE_ADMIN"));
     }
@@ -191,7 +194,8 @@ class AuthorizationEndpointIntegrationTest {
         );
 
         assertThat(userInfo)
-                .containsEntry("sub", "admin");
+                .containsEntry("sub", "admin")
+                .containsEntry("tenant", "tenant-alpha");
         assertThat(userInfo.get("roles")).isEqualTo(java.util.List.of("ROLE_ADMIN"));
         assertThat(userInfo).doesNotContainKeys("email", "email_verified", "preferred_username", "updated_at");
     }

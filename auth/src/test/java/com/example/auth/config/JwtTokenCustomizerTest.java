@@ -66,13 +66,15 @@ class JwtTokenCustomizerTest {
 
         assertThat(context.getClaims().build().getClaimAsStringList("roles"))
                 .isEqualTo(List.of("ROLE_ADMIN"));
+        assertThat(context.getClaims().build().getClaimAsString("tenant"))
+                .isEqualTo("tenant-alpha");
     }
 
     @Test
     void addsOnlyDistinctSortedRoleAuthoritiesToRolesClaim() {
         RegisteredClient registeredClient = registeredClientRepository.findByClientId("client_id_1");
         Authentication principal = UsernamePasswordAuthenticationToken.authenticated(
-                "mixed-authorities-user",
+                "admin",
                 "N/A",
                 List.of(
                         new SimpleGrantedAuthority("ROLE_ADMIN"),
@@ -126,6 +128,7 @@ class JwtTokenCustomizerTest {
 
         assertThat(builtClaims.getClaimAsString("preferred_username")).isEqualTo("admin");
         assertThat(builtClaims.getClaimAsString("email")).isEqualTo("admin@example.com");
+        assertThat(builtClaims.getClaimAsString("tenant")).isEqualTo("tenant-alpha");
         assertThat((Boolean) builtClaims.getClaim("email_verified")).isEqualTo(true);
         assertThat(builtClaims.getClaimAsStringList("roles")).isEqualTo(List.of("ROLE_ADMIN"));
     }

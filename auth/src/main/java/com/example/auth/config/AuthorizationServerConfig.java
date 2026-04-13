@@ -118,9 +118,13 @@ public class AuthorizationServerConfig {
     ) {
         return args -> {
             ensureUser(userRepository, userAuthorityRepository, passwordEncoder,
-                    "user", "user@example.com", List.of("ROLE_USER"));
+                    "user", "user@example.com", "tenant-alpha", List.of("ROLE_USER"));
             ensureUser(userRepository, userAuthorityRepository, passwordEncoder,
-                    "admin", "admin@example.com", List.of("ROLE_ADMIN"));
+                    "teammate", "teammate@example.com", "tenant-alpha", List.of("ROLE_USER"));
+            ensureUser(userRepository, userAuthorityRepository, passwordEncoder,
+                    "outsider", "outsider@example.com", "tenant-bravo", List.of("ROLE_USER"));
+            ensureUser(userRepository, userAuthorityRepository, passwordEncoder,
+                    "admin", "admin@example.com", "tenant-alpha", List.of("ROLE_ADMIN"));
         };
     }
 
@@ -148,6 +152,7 @@ public class AuthorizationServerConfig {
 
             if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
                 context.getClaims().claim("roles", oidcClaimService.roleClaims(principal));
+                context.getClaims().claim("tenant", oidcClaimService.tenantClaim(principal));
                 return;
             }
 
@@ -175,6 +180,7 @@ public class AuthorizationServerConfig {
             PasswordEncoder passwordEncoder,
             String username,
             String email,
+            String tenantId,
             List<String> authorities
     ) {
         userRepository.findByUsername(username).ifPresentOrElse(existingUser -> {
@@ -186,6 +192,7 @@ public class AuthorizationServerConfig {
                             username,
                             passwordEncoder.encode("1234"),
                             email,
+                            tenantId,
                             null,
                             null
                     ));

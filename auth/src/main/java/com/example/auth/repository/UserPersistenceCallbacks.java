@@ -20,6 +20,7 @@ public class UserPersistenceCallbacks implements BeforeConvertCallback<User> {
                 user.getUsername(),
                 user.getPassword(),
                 user.getEmail(),
+                user.getTenantId(),
                 createdAt,
                 now
         );

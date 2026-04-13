@@ -17,6 +17,8 @@ public class User {
 
     private String email;
 
+    private String tenantId;
+
     private OffsetDateTime createdAt;
 
     private OffsetDateTime updatedAt;
@@ -24,11 +26,12 @@ public class User {
     public User() {
     }
 
-    public User(Long id, String username, String password, String email, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+    public User(Long id, String username, String password, String email, String tenantId, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.email = email;
+        this.tenantId = tenantId;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -47,6 +50,10 @@ public class User {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getTenantId() {
+        return tenantId;
     }
 
     public OffsetDateTime getCreatedAt() {

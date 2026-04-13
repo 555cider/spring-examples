@@ -7,6 +7,7 @@ import com.example.gateway.document.DocumentRecord;
 import com.example.gateway.security.DocumentAccessPolicy;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,13 +33,15 @@ public class AuthorizationApiController {
 
     @GetMapping("/me")
     public Mono<Map<String, Object>> me(Authentication authentication) {
-        return Mono.just(Map.of(
-                "username", authentication.getName(),
-                "authorities", authentication.getAuthorities().stream()
-                        .map(authority -> authority.getAuthority())
-                        .sorted()
-                        .toList()
-        ));
+        java.util.LinkedHashMap<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("username", authentication.getName());
+        response.put("tenant", tenant(authentication));
+        response.put("authorities", authentication.getAuthorities().stream()
+                .map(authority -> authority.getAuthority())
+                .sorted()
+                .toList());
+
+        return Mono.just(response);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -67,8 +70,18 @@ public class AuthorizationApiController {
                     return Mono.just(Map.of(
                             "id", document.id(),
                             "title", document.title(),
-                            "ownerUsername", document.ownerUsername()
+                            "ownerUsername", document.ownerUsername(),
+                            "tenantId", document.tenantId(),
+                            "sharingPolicy", document.sharingPolicy().name()
                     ));
                 });
+    }
+
+    private String tenant(Authentication authentication) {
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            return jwtAuthenticationToken.getToken().getClaimAsString("tenant");
+        }
+
+        return null;
     }
 }

@@ -5,9 +5,13 @@ create table if not exists my_schema.users (
     username varchar(100) not null unique,
     password varchar(200) not null,
     email varchar(200) not null unique,
+    tenant_id varchar(100) not null default 'tenant-default',
     created_at timestamp with time zone not null default current_timestamp,
     updated_at timestamp with time zone not null default current_timestamp
 );
+
+alter table my_schema.users
+    add column if not exists tenant_id varchar(100) default 'tenant-default';
 
 alter table my_schema.users
     add column if not exists created_at timestamp with time zone default current_timestamp;
@@ -49,6 +53,10 @@ update my_schema.users
 set updated_at = coalesce(updated_at, created_at, current_timestamp)
 where updated_at is null;
 
+update my_schema.users
+set tenant_id = 'tenant-default'
+where tenant_id is null or tenant_id = '';
+
 alter table my_schema.users
     alter column created_at set default current_timestamp;
 
@@ -60,6 +68,12 @@ alter table my_schema.users
 
 alter table my_schema.users
     alter column updated_at set not null;
+
+alter table my_schema.users
+    alter column tenant_id set default 'tenant-default';
+
+alter table my_schema.users
+    alter column tenant_id set not null;
 
 create table if not exists my_schema.user_authorities (
     user_id bigint not null references my_schema.users (id) on delete cascade,

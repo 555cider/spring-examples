@@ -35,6 +35,7 @@ class OidcClaimServiceTest {
                 .containsEntry("sub", "admin")
                 .containsEntry("preferred_username", "admin")
                 .containsEntry("email", "admin@example.com")
+                .containsEntry("tenant", "tenant-alpha")
                 .containsEntry("email_verified", true)
                 .containsKey("updated_at");
         assertThat(userInfoClaims.get("roles")).isEqualTo(java.util.List.of("ROLE_ADMIN"));
@@ -46,6 +47,7 @@ class OidcClaimServiceTest {
 
         assertThat(userInfoClaims)
                 .containsEntry("sub", "admin")
+                .containsEntry("tenant", "tenant-alpha")
                 .containsEntry("roles", java.util.List.of("ROLE_ADMIN"))
                 .doesNotContainKeys("email", "email_verified", "preferred_username", "updated_at");
     }

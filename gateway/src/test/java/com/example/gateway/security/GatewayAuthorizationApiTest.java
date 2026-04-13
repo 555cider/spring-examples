@@ -52,7 +52,7 @@ class GatewayAuthorizationApiTest {
 
     @Test
     void meReturnsUsernameAndAuthoritiesFromJwtRolesClaim() {
-        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "alice", List.of("ROLE_USER"), null)));
+        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "alice", "tenant-alpha", List.of("ROLE_USER"), null)));
 
         webTestClient.get()
                 .uri("/api/me")
@@ -62,6 +62,7 @@ class GatewayAuthorizationApiTest {
                 .expectBody(Map.class)
                 .value(response -> {
                     assertThat(response.get("username")).isEqualTo("alice");
+                    assertThat(response.get("tenant")).isEqualTo("tenant-alpha");
                     assertAuthorities(response, "ROLE_USER");
                 });
     }
@@ -85,7 +86,7 @@ class GatewayAuthorizationApiTest {
     @Test
     void mePreservesScopeAuthoritiesAlongsideRoles() {
         when(jwtDecoder.decode(eq("scoped-user-token"))).thenReturn(Mono.just(
-                jwt("scoped-user-token", "alice", List.of("ROLE_USER"), "profile reports:read")));
+                jwt("scoped-user-token", "alice", "tenant-alpha", List.of("ROLE_USER"), "profile reports:read")));
 
         webTestClient.get()
                 .uri("/api/me")
@@ -95,13 +96,14 @@ class GatewayAuthorizationApiTest {
                 .expectBody(Map.class)
                 .value(response -> {
                     assertThat(response.get("username")).isEqualTo("alice");
+                    assertThat(response.get("tenant")).isEqualTo("tenant-alpha");
                     assertAuthorities(response, "ROLE_USER", "SCOPE_profile", "SCOPE_reports:read");
                 });
     }
 
     @Test
     void adminReportsRejectsRoleUser() {
-        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "alice", List.of("ROLE_USER"), null)));
+        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "alice", "tenant-alpha", List.of("ROLE_USER"), null)));
 
         webTestClient.get()
                 .uri("/api/admin/reports")
@@ -120,7 +122,7 @@ class GatewayAuthorizationApiTest {
 
     @Test
     void adminReportsAllowsRoleAdmin() {
-        when(jwtDecoder.decode(eq("admin-token"))).thenReturn(Mono.just(jwt("admin-token", "admin", List.of("ROLE_ADMIN"), null)));
+        when(jwtDecoder.decode(eq("admin-token"))).thenReturn(Mono.just(jwt("admin-token", "admin", "tenant-alpha", List.of("ROLE_ADMIN"), null)));
 
         webTestClient.get()
                 .uri("/api/admin/reports")
@@ -134,26 +136,55 @@ class GatewayAuthorizationApiTest {
 
     @Test
     void documentOwnerCanReadOwnedDocument() {
-        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "user", List.of("ROLE_USER"), null)));
+        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "user", "tenant-alpha", List.of("ROLE_USER"), null)));
 
         webTestClient.get()
-                .uri("/api/documents/doc-user")
+                .uri("/api/documents/doc-user-private")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer user-token")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.id").isEqualTo("doc-user")
-                .jsonPath("$.title").isEqualTo("User Document")
-                .jsonPath("$.ownerUsername").isEqualTo("user");
+                .jsonPath("$.id").isEqualTo("doc-user-private")
+                .jsonPath("$.title").isEqualTo("User Private Document")
+                .jsonPath("$.ownerUsername").isEqualTo("user")
+                .jsonPath("$.tenantId").isEqualTo("tenant-alpha")
+                .jsonPath("$.sharingPolicy").isEqualTo("OWNER_ONLY");
     }
 
     @Test
-    void roleUserCannotReadAnotherUsersDocument() {
-        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "user", List.of("ROLE_USER"), null)));
+    void sameTenantUserCanReadTenantSharedDocument() {
+        when(jwtDecoder.decode(eq("teammate-token"))).thenReturn(Mono.just(jwt("teammate-token", "user", "tenant-alpha", List.of("ROLE_USER"), null)));
 
         webTestClient.get()
-                .uri("/api/documents/doc-admin")
+                .uri("/api/documents/doc-tenant-shared")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer teammate-token")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("doc-tenant-shared")
+                .jsonPath("$.ownerUsername").isEqualTo("teammate")
+                .jsonPath("$.tenantId").isEqualTo("tenant-alpha")
+                .jsonPath("$.sharingPolicy").isEqualTo("TENANT");
+    }
+
+    @Test
+    void sameTenantUserCannotReadAnotherUsersOwnerOnlyDocument() {
+        when(jwtDecoder.decode(eq("user-token"))).thenReturn(Mono.just(jwt("user-token", "teammate", "tenant-alpha", List.of("ROLE_USER"), null)));
+
+        webTestClient.get()
+                .uri("/api/documents/doc-user-private")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer user-token")
+                .exchange()
+                .expectStatus().isForbidden();
+    }
+
+    @Test
+    void crossTenantUserCannotReadTenantSharedDocument() {
+        when(jwtDecoder.decode(eq("outsider-token"))).thenReturn(Mono.just(jwt("outsider-token", "outsider", "tenant-bravo", List.of("ROLE_USER"), null)));
+
+        webTestClient.get()
+                .uri("/api/documents/doc-tenant-shared")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer outsider-token")
                 .exchange()
                 .expectStatus().isForbidden();
     }
@@ -161,29 +192,29 @@ class GatewayAuthorizationApiTest {
     @Test
     void documentRequiresAuthentication() {
         webTestClient.get()
-                .uri("/api/documents/doc-user")
+                .uri("/api/documents/doc-user-private")
                 .exchange()
                 .expectStatus().isUnauthorized();
     }
 
     @Test
     void adminCanReadAnotherUsersDocument() {
-        when(jwtDecoder.decode(eq("admin-token"))).thenReturn(Mono.just(jwt("admin-token", "admin", List.of("ROLE_ADMIN"), null)));
+        when(jwtDecoder.decode(eq("admin-token"))).thenReturn(Mono.just(jwt("admin-token", "admin", "tenant-alpha", List.of("ROLE_ADMIN"), null)));
 
         webTestClient.get()
-                .uri("/api/documents/doc-user")
+                .uri("/api/documents/doc-user-private")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer admin-token")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.id").isEqualTo("doc-user")
-                .jsonPath("$.title").isEqualTo("User Document")
+                .jsonPath("$.id").isEqualTo("doc-user-private")
+                .jsonPath("$.title").isEqualTo("User Private Document")
                 .jsonPath("$.ownerUsername").isEqualTo("user");
     }
 
     @Test
     void missingDocumentReturnsNotFound() {
-        when(jwtDecoder.decode(eq("admin-token"))).thenReturn(Mono.just(jwt("admin-token", "admin", List.of("ROLE_ADMIN"), null)));
+        when(jwtDecoder.decode(eq("admin-token"))).thenReturn(Mono.just(jwt("admin-token", "admin", "tenant-alpha", List.of("ROLE_ADMIN"), null)));
 
         webTestClient.get()
                 .uri("/api/documents/missing")
@@ -203,11 +234,12 @@ class GatewayAuthorizationApiTest {
         assertThat(authorities).contains(expectedAuthorities);
     }
 
-    private Jwt jwt(String tokenValue, String subject, List<String> roles, String scope) {
+    private Jwt jwt(String tokenValue, String subject, String tenant, List<String> roles, String scope) {
         Instant issuedAt = Instant.parse("2024-01-01T00:00:00Z");
         Jwt.Builder builder = Jwt.withTokenValue(tokenValue)
                 .header("alg", "RS512")
                 .claim("sub", subject)
+                .claim("tenant", tenant)
                 .claim("roles", roles)
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plusSeconds(300));

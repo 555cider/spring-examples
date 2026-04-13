@@ -34,6 +34,13 @@ public class OidcClaimService {
                 .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
     }
 
+    public String tenantClaim(Authentication principal) {
+        User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + principal.getName()));
+
+        return user.getTenantId();
+    }
+
     public Map<String, Object> idTokenClaims(Authentication principal) {
         User user = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + principal.getName()));
@@ -43,6 +50,7 @@ public class OidcClaimService {
         claims.put("preferred_username", user.getUsername());
         claims.put("email", user.getEmail());
         claims.put("email_verified", Boolean.TRUE);
+        claims.put("tenant", user.getTenantId());
 
         claims.put("roles", roleClaims(principal));
         return claims;
@@ -51,6 +59,7 @@ public class OidcClaimService {
     public Map<String, Object> userInfoClaims(Map<String, Object> idTokenClaims, Set<String> scopes) {
         Map<String, Object> claims = new LinkedHashMap<>();
         copyIfPresent(idTokenClaims, claims, "sub");
+        copyIfPresent(idTokenClaims, claims, "tenant");
         copyIfPresent(idTokenClaims, claims, "roles");
 
         Set<String> requestedScopes = scopes == null ? Set.of() : scopes;
@@ -74,6 +83,7 @@ public class OidcClaimService {
         idTokenClaims.put("preferred_username", user.getUsername());
         idTokenClaims.put("email", user.getEmail());
         idTokenClaims.put("email_verified", Boolean.TRUE);
+        idTokenClaims.put("tenant", user.getTenantId());
 
         OffsetDateTime updatedAt = user.getUpdatedAt() != null ? user.getUpdatedAt() : user.getCreatedAt();
         idTokenClaims.put(
