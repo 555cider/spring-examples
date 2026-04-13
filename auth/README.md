@@ -50,9 +50,13 @@
   - client secret: `client_secret_1`
   - grant types: authorization code, refresh token
 
-The application also seeds the same logical defaults at startup if they are absent, but only when the `local` or `test` profile is active. Existing databases in those profiles can self-heal missing rows without removing extra authorities.
+The application seeds demo users when `app.auth.demo-users.enabled=true` and seeds the demo OAuth client when `app.auth.demo-client.enabled=true`.
 
-The startup seeder does not run in `dev` or production profiles.
+- `local` and `test` enable both by default
+- `dev` defaults both flags to `false`
+- the provided Docker Compose `.env.example` turns them back on so the sample stack works out of the box
+
+Existing databases in enabled profiles can self-heal missing rows without removing extra authorities.
 
 ## OIDC claims
 

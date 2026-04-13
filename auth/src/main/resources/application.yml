@@ -28,8 +28,12 @@ app:
     issuer: http://localhost:8080/auth
     demo-users:
       enabled: true
+    demo-client:
+      enabled: true
+      client-id: ${AUTH_CLIENT_ID:client_id_1}
+      client-secret: ${AUTH_CLIENT_SECRET:client_secret_1}
   client:
-    redirect-uri: http://127.0.0.1:8011/login/oauth2/code/my-registration
+    redirect-uri: ${CLIENT_REDIRECT_URI:http://127.0.0.1:8011/login/oauth2/code/my-registration}
 
 ---
 # dev
@@ -60,8 +64,14 @@ server:
 app:
   auth:
     issuer: ${AUTH_ISSUER_URI}
+    demo-users:
+      enabled: ${AUTH_DEMO_USERS_ENABLED:false}
+    demo-client:
+      enabled: ${AUTH_DEMO_CLIENT_ENABLED:false}
+      client-id: ${AUTH_CLIENT_ID:}
+      client-secret: ${AUTH_CLIENT_SECRET:}
   client:
-    redirect-uri: ${CLIENT_REDIRECT_URI}
+    redirect-uri: ${CLIENT_REDIRECT_URI:}
 
 ---
 # common

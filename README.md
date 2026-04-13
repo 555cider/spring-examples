@@ -17,6 +17,17 @@ Spring Boot 4 sample workspace with:
 
 Detailed notes are in `auth/README.md`.
 
+## Demo defaults
+
+- `.env.example` contains runnable demo defaults for Docker Compose.
+- Demo users:
+  - `user` / `1234`
+  - `admin` / `1234`
+- Demo OAuth client:
+  - `AUTH_CLIENT_ID=client_id_1`
+  - `AUTH_CLIENT_SECRET=client_secret_1`
+- For stricter non-demo runs, set `AUTH_DEMO_USERS_ENABLED=false` and `AUTH_DEMO_CLIENT_ENABLED=false`.
+
 ## Local infrastructure
 
 ```bash
@@ -30,6 +41,8 @@ docker compose up -d nacos postgres redis
 docker compose up -d --build
 ```
 
+Compose uses the values from `.env`. The provided example keeps the stack demo-friendly while still allowing you to turn off demo users and demo client seeding explicitly.
+
 ## Local apps
 
 ```bash
@@ -37,6 +50,8 @@ docker compose up -d --build
 ./gradlew :gateway:bootRun --args='--spring.profiles.active=local'
 ./gradlew :client:bootRun --args='--spring.profiles.active=local'
 ```
+
+`local` keeps demo users and demo client enabled with built-in defaults, so it works even without exporting extra environment variables.
 
 ## Verification
 

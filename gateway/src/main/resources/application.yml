@@ -3,21 +3,30 @@ spring:
   config:
     activate:
       on-profile: local
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${app.gateway.auth-server.issuer-uri}
+          jws-algorithms: RS512
   data:
     redis:
       host: localhost
       port: 6379
       database: 0
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8080/auth
-          jws-algorithms: RS512
   cloud:
     nacos:
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+
+app:
+  gateway:
+    auth-server:
+      issuer-uri: ${AUTH_ISSUER_URI:http://localhost:8080/auth}
+    rate-limit:
+      replenish-rate: ${GATEWAY_RATE_LIMIT_REPLENISH_RATE:100}
+      burst-capacity: ${GATEWAY_RATE_LIMIT_BURST_CAPACITY:100}
+      requested-tokens: ${GATEWAY_RATE_LIMIT_REQUESTED_TOKENS:1}
 
 server:
   port: 8080
@@ -28,21 +37,30 @@ spring:
   config:
     activate:
       on-profile: dev
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${app.gateway.auth-server.issuer-uri}
+          jws-algorithms: RS512
   data:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       database: 0
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${AUTH_ISSUER_URI}
-          jws-algorithms: RS512
   cloud:
     nacos:
       discovery:
         server-addr: ${NACOS_SERVER_ADDR}
+
+app:
+  gateway:
+    auth-server:
+      issuer-uri: ${AUTH_ISSUER_URI}
+    rate-limit:
+      replenish-rate: ${GATEWAY_RATE_LIMIT_REPLENISH_RATE:100}
+      burst-capacity: ${GATEWAY_RATE_LIMIT_BURST_CAPACITY:100}
+      requested-tokens: ${GATEWAY_RATE_LIMIT_REQUESTED_TOKENS:1}
 
 server:
   port: ${GATEWAY_PORT}
@@ -78,9 +96,9 @@ spring:
                 - name: RequestRateLimiter
                   args:
                     redis-rate-limiter:
-                      replenishRate: 100
-                      burstCapacity: 100
-                      requestedTokens: 1
+                      replenishRate: ${app.gateway.rate-limit.replenish-rate}
+                      burstCapacity: ${app.gateway.rate-limit.burst-capacity}
+                      requestedTokens: ${app.gateway.rate-limit.requested-tokens}
                     key-resolver: "#{@myKeyResolver}"
           redis-rate-limiter:
             include-headers: false

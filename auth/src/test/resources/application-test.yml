@@ -18,5 +18,9 @@ app:
     issuer: http://localhost:8080/auth
     demo-users:
       enabled: true
+    demo-client:
+      enabled: true
+      client-id: client_id_1
+      client-secret: client_secret_1
   client:
     redirect-uri: http://127.0.0.1:8011/login/oauth2/code/my-registration

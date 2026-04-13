@@ -13,8 +13,8 @@ import com.example.auth.repository.UserRepository;
 import com.example.auth.service.OidcClaimService;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -38,6 +38,7 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 
 @Configuration
+@EnableConfigurationProperties(AuthApplicationProperties.class)
 public class AuthorizationServerConfig {
     private static final Set<String> LOCAL_REDIRECT_URIS = Set.of(
             "http://127.0.0.1:8011/login/oauth2/code/my-registration",
@@ -80,19 +81,21 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "app.auth.demo-client.enabled", havingValue = "true")
     public ApplicationRunner seedRegisteredClient(
             RegisteredClientRepository registeredClientRepository,
             PasswordEncoder passwordEncoder,
-            @Value("${app.client.redirect-uri}") String redirectUri
+            AuthApplicationProperties properties
     ) {
         return args -> {
-            if (registeredClientRepository.findByClientId("client_id_1") != null) {
+            String clientId = properties.getAuth().getDemoClient().getClientId();
+            if (registeredClientRepository.findByClientId(clientId) != null) {
                 return;
             }
 
             RegisteredClient.Builder client = RegisteredClient.withId(UUID.randomUUID().toString())
-                    .clientId("client_id_1")
-                    .clientSecret(passwordEncoder.encode("client_secret_1"))
+                    .clientId(clientId)
+                    .clientSecret(passwordEncoder.encode(properties.getAuth().getDemoClient().getClientSecret()))
                     .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
                     .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                     .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -100,7 +103,7 @@ public class AuthorizationServerConfig {
                     .scope("profile")
                     .scope("email");
 
-            supportedRedirectUris(redirectUri).forEach(client::redirectUri);
+            supportedRedirectUris(properties.getClient().getRedirectUri()).forEach(client::redirectUri);
 
             registeredClientRepository.save(client.build());
         };
@@ -127,9 +130,9 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
-    public AuthorizationServerSettings authorizationServerSettings(@Value("${app.auth.issuer}") String issuer) {
+    public AuthorizationServerSettings authorizationServerSettings(AuthApplicationProperties properties) {
         return AuthorizationServerSettings.builder()
-                .issuer(issuer)
+                .issuer(properties.getAuth().getIssuer())
                 .authorizationEndpoint("/oauth2/authorization")
                 .jwkSetEndpoint("/.well-known/jwks.json")
                 .build();

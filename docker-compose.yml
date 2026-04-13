@@ -52,6 +52,11 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - NACOS_SERVER_ADDR=nacos:8848
+      - AUTH_ISSUER_URI=http://localhost:${GATEWAY_PORT}/auth
+      - AUTH_DEMO_USERS_ENABLED=${AUTH_DEMO_USERS_ENABLED}
+      - AUTH_DEMO_CLIENT_ENABLED=${AUTH_DEMO_CLIENT_ENABLED}
+      - AUTH_CLIENT_ID=${AUTH_CLIENT_ID}
+      - AUTH_CLIENT_SECRET=${AUTH_CLIENT_SECRET}
       - CLIENT_REDIRECT_URI=http://localhost:${CLIENT_PORT}/login/oauth2/code/my-registration
     ports:
       - "${AUTH_PORT}:${AUTH_PORT_DOCKER}"
@@ -71,6 +76,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - NACOS_SERVER_ADDR=nacos:8848
+      - AUTH_ISSUER_URI=http://localhost:${GATEWAY_PORT}/auth
     ports:
       - "${GATEWAY_PORT}:${GATEWAY_PORT_DOCKER}"
     depends_on:
@@ -89,6 +95,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - NACOS_SERVER_ADDR=127.0.0.1:8848
+      - AUTH_ISSUER_URI=http://localhost:${GATEWAY_PORT}/auth
     ports:
       - "${CLIENT_PORT}:${CLIENT_PORT_DOCKER}"
     network_mode: "host"

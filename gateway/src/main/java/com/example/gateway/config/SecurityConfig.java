@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import reactor.core.publisher.Mono;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -23,6 +24,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableReactiveMethodSecurity
 @EnableWebFluxSecurity
 @Configuration
+@EnableConfigurationProperties(GatewayApplicationProperties.class)
 public class SecurityConfig {
 
     private static final String[] PERMITTED_URL = {
