@@ -17,7 +17,7 @@
 - `my_schema.oauth2_authorization_consent`
   - consented authorities per client and principal
 - `my_schema.users`
-  - local users with `username`, `password`, `email`, `created_at`, `updated_at`
+  - local users with `username`, `password`, `email`, `tenant_id`, `created_at`, `updated_at`
 - `my_schema.user_authorities`
   - normalized user roles/authorities keyed by `(user_id, authority)`
 
@@ -39,11 +39,25 @@
   - username: `user`
   - email: `user@example.com`
   - password: `1234`
+  - tenant: `tenant-alpha`
+  - authority: `ROLE_USER`
+- Default local/test teammate:
+  - username: `teammate`
+  - email: `teammate@example.com`
+  - password: `1234`
+  - tenant: `tenant-alpha`
+  - authority: `ROLE_USER`
+- Default local/test outsider:
+  - username: `outsider`
+  - email: `outsider@example.com`
+  - password: `1234`
+  - tenant: `tenant-bravo`
   - authority: `ROLE_USER`
 - Default local/test admin:
   - username: `admin`
   - email: `admin@example.com`
   - password: `1234`
+  - tenant: `tenant-alpha`
   - authority: `ROLE_ADMIN`
 - Default local OAuth2 client:
   - client id: `client_id_1`
@@ -61,13 +75,15 @@ Existing databases in enabled profiles can self-heal missing rows without removi
 ## OIDC claims
 
 - Access tokens include a custom `roles` claim derived from `ROLE_*` authorities.
+- Access tokens include a custom `tenant` claim derived from `users.tenant_id`.
 - ID tokens include:
   - `sub`
   - `preferred_username`
   - `email`
   - `email_verified`
+  - `tenant`
   - `roles`
-- The UserInfo endpoint returns standard claims filtered by requested scopes, plus the custom `roles` claim.
+- The UserInfo endpoint returns standard claims filtered by requested scopes, plus the custom `tenant` and `roles` claims.
 - `updated_at` is emitted from the UserInfo endpoint for `profile` scope, not persisted into the ID token.
 
 ## Operational notes

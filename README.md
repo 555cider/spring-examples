@@ -20,9 +20,15 @@ Detailed notes are in `auth/README.md`.
 ## Demo defaults
 
 - `.env.example` contains runnable demo defaults for Docker Compose.
+- It only keeps the environment variables currently used by Compose and the app modules.
 - Demo users:
   - `user` / `1234`
+  - `teammate` / `1234`
+  - `outsider` / `1234`
   - `admin` / `1234`
+- Demo tenants:
+  - `tenant-alpha`: `user`, `teammate`, `admin`
+  - `tenant-bravo`: `outsider`
 - Demo OAuth client:
   - `AUTH_CLIENT_ID=client_id_1`
   - `AUTH_CLIENT_SECRET=client_secret_1`
